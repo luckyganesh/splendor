@@ -1,0 +1,1037 @@
+:root {
+  color-scheme: dark;
+  --bg: #0f1720;
+  --panel: #1a2632;
+  --panel-2: #22303e;
+  --border: #33475a;
+  --text: #e7edf3;
+  --text-dim: #9fb0c0;
+  --accent: #4fa3ff;
+  --danger: #e2544a;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+/* Once in a room, use the full screen: 60% for the board, 40% for the
+   opponent/chat/you dock (see .game-dock). */
+body.in-room {
+  grid-template-columns: 60% 40%;
+}
+
+#app {
+  min-width: 0;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.board-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 0.4rem 0.7rem;
+}
+
+button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+button.secondary {
+  background: transparent;
+}
+
+input {
+  font: inherit;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 0.5rem;
+}
+
+/* Lobby */
+
+.lobby-entry {
+  max-width: 480px;
+  margin: 3rem auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.lobby-entry h1 {
+  margin-top: 0;
+}
+
+.lobby-forms {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.lobby-forms form {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--panel-2);
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.status {
+  color: var(--text-dim);
+  min-height: 1.2em;
+}
+
+.room-code {
+  font-size: 1.4rem;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+}
+
+.waiting-list {
+  text-align: left;
+  max-width: 260px;
+  margin: 1rem auto;
+}
+
+.waiting-list li.player-offline {
+  color: var(--text-dim);
+}
+
+.hint {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+/* Game board */
+
+.turn-banner {
+  text-align: center;
+  font-weight: 600;
+  padding: 0.35rem;
+  background: var(--panel);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.modal-winner {
+  border-color: var(--accent);
+  min-width: 340px;
+}
+
+.winner-text {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0.6rem 0;
+}
+
+.winner-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+  text-align: left;
+}
+
+.winner-row {
+  display: grid;
+  grid-template-columns: 1.6rem 1fr auto;
+  align-items: center;
+  gap: 0.3rem 0.6rem;
+  padding: 0.5rem 0.7rem;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.winner-row-winner {
+  border-color: var(--accent);
+  background: rgba(255, 200, 80, 0.08);
+}
+
+.winner-medal {
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.winner-name {
+  font-weight: 600;
+  grid-column: 2;
+}
+
+.winner-points {
+  font-weight: 700;
+  color: var(--accent);
+  grid-column: 3;
+}
+
+.winner-detail {
+  grid-column: 2 / span 2;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.winner-leave {
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.nobles {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.6rem;
+  justify-content: center;
+}
+
+.noble {
+  width: 120px;
+  height: 120px;
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 215, 120, 0.05) 0, rgba(255, 215, 120, 0.05) 2px, transparent 2px, transparent 6px),
+    radial-gradient(circle at 50% 25%, rgba(255, 215, 150, 0.16), transparent 60%),
+    linear-gradient(160deg, #3a3020, #241d13);
+  border: 1px solid #6b5a34;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.noble-choice {
+  color: inherit;
+}
+
+.noble-claimed {
+  filter: grayscale(1);
+  opacity: 0.35;
+  position: relative;
+}
+
+.noble-claimed::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(0, 0, 0, 0.35) 0,
+    rgba(0, 0, 0, 0.35) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+}
+
+.noble-points {
+  font-weight: 700;
+  font-size: 1.8rem;
+}
+
+.noble-req {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.tiers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.tier-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel);
+  border-radius: 8px;
+  padding: 0.4rem;
+  border: 1px solid var(--border);
+}
+
+.card {
+  width: 118px;
+  height: 180px;
+  background-color: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+/* A distinct subtle background pattern per gem type, not just a color — each
+   evokes the way that gem is actually cut/finished. Applies to both full
+   cards and reserved-card previews (mini-card). Kept low-opacity so it reads
+   as texture, not noise, and never competes with the card's own content. */
+.pattern-white {
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.08), transparent 55%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.05) 0, rgba(255, 255, 255, 0.05) 1px, transparent 1px, transparent 6px),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 0, rgba(255, 255, 255, 0.05) 1px, transparent 1px, transparent 6px);
+}
+
+.pattern-blue {
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(130, 180, 255, 0.1), transparent 55%),
+    repeating-linear-gradient(0deg, rgba(130, 180, 255, 0.07) 0, rgba(130, 180, 255, 0.07) 2px, transparent 2px, transparent 8px);
+}
+
+.pattern-green {
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(120, 220, 160, 0.1), transparent 55%),
+    repeating-linear-gradient(0deg, rgba(120, 220, 160, 0.06) 0, rgba(120, 220, 160, 0.06) 1px, transparent 1px, transparent 7px),
+    repeating-linear-gradient(90deg, rgba(120, 220, 160, 0.06) 0, rgba(120, 220, 160, 0.06) 1px, transparent 1px, transparent 7px);
+}
+
+.pattern-red {
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 130, 115, 0.1), transparent 55%),
+    repeating-linear-gradient(60deg, rgba(255, 130, 115, 0.06) 0, rgba(255, 130, 115, 0.06) 1px, transparent 1px, transparent 5px),
+    repeating-linear-gradient(-60deg, rgba(255, 130, 115, 0.06) 0, rgba(255, 130, 115, 0.06) 1px, transparent 1px, transparent 5px);
+}
+
+.pattern-black {
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.06), transparent 55%),
+    radial-gradient(circle at 22% 32%, rgba(255, 255, 255, 0.05), transparent 35%),
+    radial-gradient(circle at 75% 60%, rgba(255, 255, 255, 0.04), transparent 40%),
+    radial-gradient(circle at 40% 82%, rgba(255, 255, 255, 0.045), transparent 30%);
+}
+
+.card-empty {
+  visibility: hidden;
+}
+
+.card-back,
+.mini-card.card-back {
+  align-items: center;
+  justify-content: center;
+  background: repeating-linear-gradient(45deg, var(--panel-2), var(--panel-2) 6px, #16202b 6px, #16202b 12px);
+  gap: 0.2rem;
+}
+
+.deck-count {
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: var(--text-dim);
+}
+
+.deck-label {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+}
+
+.card-top,
+.mini-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.points {
+  font-weight: 800;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.cost {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  align-content: start;
+  justify-items: start;
+  flex: 1;
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.card-actions button {
+  flex: 1;
+  padding: 0.3rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+/* Confirm/Cancel: stacked, not side by side, so each button gets the card's
+   full width for its label regardless of how narrow the card is. */
+.card-actions-confirm {
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mini-card {
+  width: 84px;
+  height: 76px;
+  flex-shrink: 0;
+  background-color: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Your own reserved cards get more room so the cost is legible; opponents'
+   stay compact since theirs are always shown face-down anyway. */
+.mini-card-mine {
+  width: 100px;
+  height: 150px;
+  gap: 0.3rem;
+  padding: 0.4rem;
+}
+
+/* Reserved cards stack one on top of the next, each peeking out above the one
+   below it; hovering brings that card to the front, fully visible. */
+.reserved-stack {
+  position: relative;
+}
+
+.reserved-stack-item {
+  position: absolute;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.reserved-stack-item:hover {
+  z-index: 20 !important;
+}
+
+.reserved-stack-item:hover .mini-card-mine {
+  transform: translate(24px, -18px) scale(1.2);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.7);
+}
+
+.mini-points {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+/* Gem icon tokens: each color renders as a distinct real gem/coin silhouette (see gems.ts),
+   not a generic circle, so colorblind/shape-based recognition works the same as the physical game. */
+
+.gem-token {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+}
+
+.gem-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* White text with a dark outline reads on every gem color, including onyx's
+   near-black fill, unlike a single fixed dark color + light halo did. */
+.gem-count {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow:
+    -1px -1px 0 rgba(0, 0, 0, 0.85),
+    1px -1px 0 rgba(0, 0, 0, 0.85),
+    -1px 1px 0 rgba(0, 0, 0, 0.85),
+    1px 1px 0 rgba(0, 0, 0, 0.85),
+    0 0 3px rgba(0, 0, 0, 0.5);
+}
+
+.gem-token-sm {
+  width: 24px;
+  height: 24px;
+}
+.gem-token-sm .gem-count {
+  font-size: 0.72rem;
+}
+
+.gem-token-md {
+  width: 30px;
+  height: 30px;
+}
+.gem-token-md .gem-count {
+  font-size: 0.85rem;
+}
+
+.gem-token-lg {
+  width: 58px;
+  height: 58px;
+}
+.gem-token-lg .gem-count {
+  font-size: 1.25rem;
+}
+
+button.gem-token-button {
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 50%;
+}
+
+.bank {
+  display: flex;
+  align-items: stretch;
+  gap: 0.8rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+
+.bank-piles {
+  flex: 1;
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Fixed-width slot, always present (even empty) so Confirm/Cancel/Pass appearing
+   or disappearing never shifts or resizes the bank box next to it. */
+.bank-actions {
+  flex-shrink: 0;
+  width: 170px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid var(--border);
+  padding-left: 0.8rem;
+}
+
+.bank-actions .action-bar {
+  width: 100%;
+  flex-direction: column;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.pile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.pile-selected .gem-token-lg {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
+.pile-label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+
+.mini {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+}
+
+/* Reserves the same vertical space as a .mini button (gold has no "take 2"
+   action) so every pile in the bank row lines up at the same height. */
+.mini-placeholder {
+  display: inline-block;
+  visibility: hidden;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+  border: 1px solid transparent;
+}
+
+/* Game dock: the 40% column, filling the full screen height and split into
+   two equal stacked sections — (chat + your resources) then opponents. */
+.game-dock {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  box-sizing: border-box;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.game-dock.hidden {
+  display: none;
+}
+
+.dock-row {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 0.6rem;
+}
+
+/* One solid box, sized and styled to exactly match .chat-panel beside it —
+   the inner .player-panel/.action-bar are stripped of their own borders
+   (see below) so they don't nest as a box-within-a-box. */
+.my-panel-dock {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  padding: 0.6rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.my-panel-dock.hidden {
+  display: none;
+}
+
+.my-panel-dock .player-panel {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.opponents-dock {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.opponents-dock.hidden {
+  display: none;
+}
+
+.opponent-tile {
+  flex-shrink: 0;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 1.05rem;
+}
+
+.opponent-body {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.opponent-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.opponent-reserved-area {
+  flex-shrink: 0;
+  min-width: 84px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.opponent-reserved-area .player-reserved {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.player-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.my-panel {
+  border: 1px solid var(--accent);
+  background: linear-gradient(160deg, rgba(79, 163, 255, 0.1), var(--panel) 60%);
+  gap: 0.5rem;
+}
+
+.info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.info-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+
+.info-body {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.empty-hint {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.player-current {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.player-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+
+.player-points {
+  margin-left: auto;
+  color: var(--accent);
+}
+
+.conn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.conn-on {
+  background: #3ecf6e;
+}
+
+.conn-off {
+  background: #666;
+}
+
+.player-bonuses,
+.player-tokens,
+.player-reserved {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.action-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.modal {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.5rem;
+  max-width: 90vw;
+  text-align: center;
+}
+
+.discard-list {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin: 0.5rem 0;
+}
+
+.discard-row {
+  display: grid;
+  grid-template-columns: auto 5.5rem 3rem auto auto;
+  align-items: center;
+  column-gap: 0.6rem;
+  margin: 0.3rem 0;
+  text-align: left;
+}
+
+.discard-label {
+  text-align: left;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.discard-count {
+  text-align: right;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.toast {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--danger);
+  color: white;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  z-index: 20;
+}
+
+/* Chat: lives outside #app so it's never touched by the game-state re-render
+   loop (see chat.ts for why). Always open, no close option — a flex child of
+   .dock-row sized to match .my-panel-dock so the two sit as equal-sized boxes. */
+
+.chat-panel {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-header {
+  padding: 0.5rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
+
+.chat-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.chat-row {
+  max-width: 85%;
+  background: var(--panel-2);
+  border-radius: 8px;
+  padding: 0.35rem 0.55rem;
+}
+
+.chat-row-mine {
+  align-self: flex-end;
+  background: #274a72;
+}
+
+.chat-meta {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+
+.chat-text {
+  font-size: 0.9rem;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.chat-form {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.chat-form input {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .card {
+    width: 82px;
+    height: 132px;
+  }
+  .mini-card {
+    width: 60px;
+    height: 56px;
+  }
+  .gem-token-lg {
+    width: 40px;
+    height: 40px;
+  }
+  .gem-token-lg .gem-count {
+    font-size: 0.85rem;
+  }
+
+  body.in-room {
+    grid-template-columns: 1fr;
+  }
+
+  .game-dock {
+    position: static;
+    height: auto;
+  }
+
+  .dock-row {
+    flex-direction: column;
+  }
+
+  .my-panel-dock,
+  .chat-panel {
+    height: 340px;
+  }
+}
+
+.fly-ghost {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  transition:
+    transform 2400ms cubic-bezier(0.3, 0.6, 0.25, 1),
+    opacity 600ms ease 1800ms;
+  will-change: transform, opacity;
+}
+
+.fly-ghost-card .card-actions,
+.fly-ghost-card .cost {
+  display: none;
+}
+
+.fly-ghost-token {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes cardPopIn {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.4;
+    box-shadow: 0 0 0 3px var(--accent);
+  }
+  60% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: none;
+  }
+}
+
+.card-pop-in {
+  animation: cardPopIn 450ms ease-out;
+}
+
+/* On wider screens (e.g. a 16" laptop vs. a 14" one) the 60%/40% split leaves
+   the board column with a lot of extra room. Scale the fixed-size board
+   pieces up a bit so the game reads at roughly the same visual density
+   instead of just floating in more empty margin. */
+@media (min-width: 1650px) {
+  .card {
+    width: 132px;
+    height: 200px;
+  }
+
+  .noble {
+    width: 136px;
+    height: 136px;
+  }
+
+  .noble-points {
+    font-size: 2rem;
+  }
+
+  .gem-token-lg {
+    width: 66px;
+    height: 66px;
+  }
+
+  .gem-token-lg .gem-count {
+    font-size: 1.4rem;
+  }
+
+  .gem-token-md {
+    width: 34px;
+    height: 34px;
+  }
+
+  .gem-token-md .gem-count {
+    font-size: 0.95rem;
+  }
+
+  .mini-card-mine {
+    width: 112px;
+    height: 168px;
+  }
+}

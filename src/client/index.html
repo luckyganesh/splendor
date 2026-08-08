@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Splendor</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="game-dock" class="game-dock hidden">
+      <div id="opponents-dock" class="opponents-dock hidden"></div>
+      <div class="dock-row">
+        <div id="my-panel-dock" class="my-panel-dock hidden"></div>
+        <div id="chat-panel" class="chat-panel">
+          <div class="chat-header"><span>Chat</span></div>
+          <div id="chat-log" class="chat-log"></div>
+          <form id="chat-form" class="chat-form">
+            <input id="chat-input" name="text" placeholder="Say something..." maxlength="500" autocomplete="off" />
+            <button type="submit">Send</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

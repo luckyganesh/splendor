@@ -1,0 +1,11 @@
+services:
+  splendor:
+    build: .
+    ports:
+      - '8001:3000'
+    volumes:
+      - ./data:/data
+    environment:
+      - PORT=3000
+      - DATA_DIR=/data
+    restart: unless-stopped

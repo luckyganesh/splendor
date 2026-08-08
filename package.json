@@ -1,0 +1,26 @@
+{
+  "name": "splendor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server/index.ts",
+    "build:server": "tsc -p tsconfig.server.json",
+    "build:client": "esbuild src/client/main.ts --bundle --outfile=dist/client/main.js --format=esm",
+    "build": "npm run build:server && npm run build:client && cp src/client/index.html src/client/style.css dist/client/",
+    "start": "node dist/server/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.13",
+    "esbuild": "^0.28.1",
+    "tsx": "^4.23.8",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.10"
+  }
+}
