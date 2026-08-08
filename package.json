@@ -7,7 +7,7 @@
     "dev": "tsx watch src/server/index.ts",
     "build:server": "tsc -p tsconfig.server.json",
     "build:client": "esbuild src/client/main.ts --bundle --outfile=dist/client/main.js --format=esm",
-    "build": "npm run build:server && npm run build:client && cp src/client/index.html src/client/style.css dist/client/",
+    "build": "npm run build:server && npm run build:client && cp src/client/index.html src/client/style.css src/client/favicon.svg dist/client/",
     "start": "node dist/server/index.js",
     "test": "vitest run",
     "test:watch": "vitest"
