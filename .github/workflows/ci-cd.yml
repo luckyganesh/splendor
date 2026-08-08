@@ -29,6 +29,9 @@ jobs:
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write # required to upload the scan results below
     steps:
       - uses: actions/checkout@v4
 
@@ -41,7 +44,53 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - uses: docker/build-push-action@v6
+      # Build once (amd64 only — `load` can't produce a multi-arch manifest) so
+      # Trivy can scan it locally before anything gets pushed. Layers are cached
+      # via GHA, so the real multi-arch build below reuses this amd64 work.
+      - name: Build image for scanning
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: luckyganesh/splendor:scan
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Human-readable table, printed straight into this step's log on the
+      # Actions run page. Fails the job (blocking the push) on a CRITICAL/HIGH
+      # vulnerability that has an available fix — unfixable findings (no
+      # upstream patch yet) are reported but don't block, since there's
+      # nothing actionable to do about those.
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: luckyganesh/splendor:scan
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+
+      # Same scan again, machine-readable this time, so results also show up
+      # as code-scanning alerts in the repo's Security tab. Always runs (even
+      # if the step above already failed the job) so both views stay in sync.
+      - name: Generate SARIF report for the Security tab
+        if: always()
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: luckyganesh/splendor:scan
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+
+      - name: Upload scan results to the Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+
+      - name: Build and push multi-arch image
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64

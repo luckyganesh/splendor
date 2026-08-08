@@ -14,7 +14,13 @@ ENV NODE_ENV=production \
     DATA_DIR=/data
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+# npm itself is only needed to resolve/install the one prod dependency (ws) —
+# the container never invokes npm at runtime (CMD runs node directly). Strip
+# npm's own CLI and its vendored dependencies out afterward so vulnerabilities
+# in npm's bundled packages (which the base image ships regardless) don't
+# show up in scans of an image that never actually runs them.
+RUN npm ci --omit=dev && \
+    rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 COPY --from=build /app/dist ./dist
 RUN mkdir -p /data/games && chown -R node:node /data
 USER node
