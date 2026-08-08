@@ -39,6 +39,7 @@ export function renderWaitingRoom(
              <p class="hint">${canStart ? '' : 'Need 2-4 players to start.'}</p>`
           : '<p class="hint">Waiting for the host to start the game...</p>'
       }
+      <button data-action="leave-room" class="secondary leave-room-link">Leave room</button>
     </div>`;
 }
 

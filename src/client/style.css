@@ -753,6 +753,17 @@ button.gem-token-button {
   color: var(--accent);
 }
 
+.leave-room-link {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  color: var(--text-dim);
+}
+
+.lobby-entry .leave-room-link {
+  display: block;
+  margin: 1rem auto 0;
+}
+
 .conn-dot {
   width: 8px;
   height: 8px;

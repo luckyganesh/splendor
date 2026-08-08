@@ -72,12 +72,26 @@ export class Room {
     return { room, playerId, secret };
   }
 
+  /**
+   * Joining with a name that already belongs to a currently-disconnected
+   * player reclaims that seat instead of erroring — this is what lets
+   * someone who lost their connection (crashed browser, different device
+   * with no localStorage identity) get back into an in-progress game using
+   * only the room code and their name. A name still connected elsewhere
+   * can't be hijacked this way.
+   */
   join(playerName: string): { ok: true; playerId: string; secret: string } | { ok: false; code: ErrorCode; message: string } {
+    const existing = this.players.find((p) => p.name.toLowerCase() === playerName.toLowerCase());
+    if (existing) {
+      if (existing.socket) {
+        return { ok: false, code: 'NAME_TAKEN', message: 'That name is already connected in this room' };
+      }
+      const secret = generateSecret();
+      existing.secretHash = hashSecret(secret);
+      return { ok: true, playerId: existing.id, secret };
+    }
     if (this.phase !== 'lobby') return { ok: false, code: 'GAME_ALREADY_STARTED', message: 'This game has already started' };
     if (this.players.length >= MAX_PLAYERS) return { ok: false, code: 'ROOM_FULL', message: 'Room is full' };
-    if (this.players.some((p) => p.name.toLowerCase() === playerName.toLowerCase())) {
-      return { ok: false, code: 'NAME_TAKEN', message: 'That name is already taken in this room' };
-    }
     const playerId = generatePlayerId();
     const secret = generateSecret();
     this.players.push({ id: playerId, name: playerName, secretHash: hashSecret(secret), socket: null });

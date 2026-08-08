@@ -2,7 +2,7 @@ import type { Color, GameStateView, TokenColor } from '../shared/types.js';
 import type { ServerMessage } from '../shared/protocol.js';
 import { initChat } from './chat.js';
 import { renderMyPanel, renderOpponents } from './components/playerPanel.js';
-import { renderPendingModal } from './components/interactions.js';
+import { renderPendingModal, renderToast } from './components/interactions.js';
 import { renderLobbyEntry, renderWaitingRoom } from './lobby.js';
 import type { PendingCardAction } from './pendingCardAction.js';
 import { canAffordCost, renderGame } from './render.js';
@@ -94,7 +94,7 @@ function loadIdentity(): StoredIdentity | null {
 
 function render() {
   if (app.screen === 'entry' || !app.lastState) {
-    root.innerHTML = renderLobbyEntry(app.status);
+    root.innerHTML = renderLobbyEntry(app.status) + renderToast(app.error);
     bindEntryForms();
     return;
   }
@@ -371,6 +371,9 @@ document.body.addEventListener('click', (event) => {
       return;
     }
     case 'leave-room': {
+      if (app.lastState?.phase === 'in_progress' && !window.confirm('Leave this game? You can rejoin later using the room code and your name.')) {
+        return;
+      }
       socket.send({ type: 'leave_room' });
       returnToEntry();
       return;

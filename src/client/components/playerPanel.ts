@@ -135,6 +135,7 @@ export function renderMyPanel(
         <span class="conn-dot conn-on"></span>
         <span class="player-name">${escapeHtml(me.name)} (you)</span>
         <span class="player-points">${me.points} pts</span>
+        <button data-action="leave-room" class="secondary leave-room-link">Leave room</button>
       </div>
       ${infoSection('Bonuses', bonusBadges(me.bonuses) || '<span class="empty-hint">none yet</span>')}
       ${infoSection('Tokens', tokenBadges(me.tokens) || '<span class="empty-hint">none yet</span>')}
