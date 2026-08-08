@@ -35,6 +35,14 @@ export function writeSnapshot(dataDir: string, snapshot: RoomSnapshot) {
   renameSync(tmpPath, finalPath);
 }
 
+export function deleteSnapshot(dataDir: string, roomCode: string) {
+  try {
+    unlinkSync(join(dataDir, `${roomCode}.json`));
+  } catch {
+    // already gone, or was never persisted — fine either way
+  }
+}
+
 export function loadAllSnapshots(dataDir: string): RoomSnapshot[] {
   const snapshots: RoomSnapshot[] = [];
   let entries: string[];

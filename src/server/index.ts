@@ -12,6 +12,7 @@ const CLIENT_DIR = join(__dirname, '..', 'client');
 
 const roomManager = new RoomManager(resolveDataDir());
 roomManager.loadPersistedRooms();
+roomManager.startExpirySweep();
 const staticHandler = createStaticHandler(CLIENT_DIR);
 
 const server = createServer(staticHandler);
