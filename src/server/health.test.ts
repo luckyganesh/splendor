@@ -36,18 +36,30 @@ describe('health handler', () => {
     expect(typeof body.uptimeSeconds).toBe('number');
   });
 
-  it('breaks rooms down by phase: waiting, active, completed', () => {
+  it('only counts an in-progress room as "active" if it has a connected player and recent activity', () => {
     const manager = new RoomManager('/tmp/does-not-matter');
 
     manager.createRoom('Alice'); // left in the lobby, never started
 
-    const { room: activeRoom } = manager.createRoom('Bob');
-    activeRoom.join('Carol');
-    activeRoom.startGame(activeRoom.hostPlayerId);
+    const { room: playedRoom, playerId: bobId } = manager.createRoom('Bob');
+    playedRoom.join('Carol');
+    playedRoom.startGame(bobId);
+    playedRoom.attachSocket(bobId, { send: () => {} } as any); // genuinely being played right now
 
-    const { room: finishedRoom } = manager.createRoom('Dave');
-    finishedRoom.join('Eve');
-    finishedRoom.startGame(finishedRoom.hostPlayerId);
+    const { room: abandonedRoom, playerId: daveId } = manager.createRoom('Dave');
+    abandonedRoom.join('Eve');
+    abandonedRoom.startGame(daveId);
+    // nobody connected, and/or nobody has touched it in a while — in_progress but idle
+
+    const { room: staleRoom, playerId: frankId } = manager.createRoom('Frank');
+    staleRoom.join('Grace');
+    staleRoom.startGame(frankId);
+    staleRoom.attachSocket(frankId, { send: () => {} } as any);
+    staleRoom.updatedAt = new Date(Date.now() - 11 * 60 * 1000).toISOString(); // connected, but stale
+
+    const { room: finishedRoom, playerId: heidiId } = manager.createRoom('Heidi');
+    finishedRoom.join('Ivan');
+    finishedRoom.startGame(heidiId);
     finishedRoom.engine!.getInternalState().phase = 'finished';
 
     const handler = createHealthHandler(manager);
@@ -55,6 +67,6 @@ describe('health handler', () => {
     handler({} as any, res);
 
     const body = JSON.parse(res.body);
-    expect(body.rooms).toEqual({ total: 3, waiting: 1, active: 1, completed: 1 });
+    expect(body.rooms).toEqual({ total: 5, waiting: 1, active: 1, idle: 2, completed: 1 });
   });
 });
