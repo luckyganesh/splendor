@@ -463,9 +463,8 @@ input {
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
 }
 
-.gem-svg {
-  width: 100%;
-  height: 100%;
+.gem-emoji {
+  line-height: 1;
   display: block;
 }
 
@@ -491,6 +490,9 @@ input {
   width: 24px;
   height: 24px;
 }
+.gem-token-sm .gem-emoji {
+  font-size: 17px;
+}
 .gem-token-sm .gem-count {
   font-size: 0.72rem;
 }
@@ -499,6 +501,9 @@ input {
   width: 30px;
   height: 30px;
 }
+.gem-token-md .gem-emoji {
+  font-size: 21px;
+}
 .gem-token-md .gem-count {
   font-size: 0.85rem;
 }
@@ -506,6 +511,9 @@ input {
 .gem-token-lg {
   width: 58px;
   height: 58px;
+}
+.gem-token-lg .gem-emoji {
+  font-size: 40px;
 }
 .gem-token-lg .gem-count {
   font-size: 1.25rem;
@@ -940,6 +948,9 @@ button.gem-token-button {
     width: 40px;
     height: 40px;
   }
+  .gem-token-lg .gem-emoji {
+    font-size: 28px;
+  }
   .gem-token-lg .gem-count {
     font-size: 0.85rem;
   }
@@ -1028,6 +1039,10 @@ button.gem-token-button {
     height: 66px;
   }
 
+  .gem-token-lg .gem-emoji {
+    font-size: 46px;
+  }
+
   .gem-token-lg .gem-count {
     font-size: 1.4rem;
   }
@@ -1035,6 +1050,10 @@ button.gem-token-button {
   .gem-token-md {
     width: 34px;
     height: 34px;
+  }
+
+  .gem-token-md .gem-emoji {
+    font-size: 24px;
   }
 
   .gem-token-md .gem-count {
@@ -1132,6 +1151,13 @@ button.gem-token-button {
   margin: 0.3rem 0;
   color: var(--text-dim);
   line-height: 1.5;
+}
+
+.rules-body .gem-token {
+  vertical-align: middle;
+  margin: 0 1px;
+  position: relative;
+  top: -2px;
 }
 
 .rules-body ul {

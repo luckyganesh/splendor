@@ -8,6 +8,7 @@ import {
   TOKENS_PER_COLOR_BY_PLAYER_COUNT,
   WINNING_POINTS,
 } from '../../shared/constants.js';
+import { gemToken } from '../gems.js';
 
 export function renderRulesButton(): string {
   return `<button data-action="open-rules" class="rules-button" title="How to play">📖 Rules</button>`;
@@ -22,6 +23,7 @@ export function renderRulesModal(open: boolean): string {
   const nobleCounts = Object.entries(NOBLES_IN_PLAY_BY_PLAYER_COUNT)
     .map(([n, c]) => `${n}p: ${c}`)
     .join(' · ');
+  const gold = gemToken('gold', 'sm');
 
   return `
     <div class="modal-backdrop">
@@ -39,13 +41,20 @@ export function renderRulesModal(open: boolean): string {
           <section>
             <h4>🎮 Setup</h4>
             <p>${MIN_PLAYERS}–${MAX_PLAYERS} players. The token bank and noble count scale with how many are seated:</p>
-            <p>🪙 Tokens per color — ${tokenCounts} (🟡 gold is always ${GOLD_TOKENS})</p>
+            <p>🪙 Tokens per color — ${tokenCounts} (${gold} gold is always ${GOLD_TOKENS})</p>
             <p>👑 Nobles in play — ${nobleCounts}</p>
           </section>
 
           <section>
             <h4>💎 The gems</h4>
-            <p>💎 Diamond · 🔷 Sapphire · 🟢 Emerald · ❤️ Ruby · ⚫ Onyx — plus 🟡 Gold, a wild token that stands in for any color when paying.</p>
+            <p>
+              ${gemToken('white', 'sm')} Diamond ·
+              ${gemToken('blue', 'sm')} Sapphire ·
+              ${gemToken('green', 'sm')} Emerald ·
+              ${gemToken('red', 'sm')} Ruby ·
+              ${gemToken('black', 'sm')} Onyx
+              — plus ${gold} Gold, a wild token that stands in for any color when paying.
+            </p>
           </section>
 
           <section>
@@ -53,8 +62,8 @@ export function renderRulesModal(open: boolean): string {
             <ul>
               <li>🌈 <strong>Take 3 tokens</strong> of three different colors.</li>
               <li>✌️ <strong>Take 2 tokens</strong> of the same color — only if that pile still has 4 or more.</li>
-              <li>🔖 <strong>Reserve a card</strong> — face-up, or blind from the top of a deck. You get a 🟡 gold token if any are left in the bank. Max ${MAX_RESERVED_CARDS} reserved cards at a time.</li>
-              <li>🛒 <strong>Purchase a card</strong> — face-up or from your own reserve. Pay with tokens plus your card bonuses; 🟡 gold covers any shortfall.</li>
+              <li>🔖 <strong>Reserve a card</strong> — face-up, or blind from the top of a deck. You get a ${gold} gold token if any are left in the bank. Max ${MAX_RESERVED_CARDS} reserved cards at a time.</li>
+              <li>🛒 <strong>Purchase a card</strong> — face-up or from your own reserve. Pay with tokens plus your card bonuses; ${gold} gold covers any shortfall.</li>
             </ul>
           </section>
 
