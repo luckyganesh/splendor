@@ -1,8 +1,11 @@
+import { renderRulesButton } from './components/rules.js';
+
 export function renderLobbyEntry(status: 'connecting' | 'open' | 'closed'): string {
   return `
     <div class="lobby-entry">
       <h1>Splendor</h1>
       <p class="status">${status === 'open' ? '' : status === 'connecting' ? 'Connecting...' : 'Disconnected, retrying...'}</p>
+      <p class="new-player-hint">New to Splendor? ${renderRulesButton()}</p>
       <div class="lobby-forms">
         <form data-form="create">
           <h2>Host a new game</h2>
@@ -39,7 +42,10 @@ export function renderWaitingRoom(
              <p class="hint">${canStart ? '' : 'Need 2-4 players to start.'}</p>`
           : '<p class="hint">Waiting for the host to start the game...</p>'
       }
-      <button data-action="leave-room" class="secondary leave-room-link">Leave room</button>
+      <div class="waiting-room-actions">
+        ${renderRulesButton()}
+        <button data-action="leave-room" class="secondary leave-room-link">Leave room</button>
+      </div>
     </div>`;
 }
 

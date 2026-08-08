@@ -1046,3 +1046,101 @@ button.gem-token-button {
     height: 168px;
   }
 }
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.top-bar .turn-banner {
+  flex: 1;
+}
+
+.rules-button {
+  flex-shrink: 0;
+  background: var(--panel-2);
+}
+
+.new-player-hint {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.waiting-room-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.modal-rules {
+  width: 90vw;
+  max-width: 640px;
+  text-align: left;
+  padding: 0;
+  overflow: hidden;
+}
+
+.rules-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.rules-header h3 {
+  margin: 0;
+}
+
+.rules-close {
+  flex-shrink: 0;
+  padding: 0.2rem 0.55rem;
+  background: transparent;
+  border-color: var(--border);
+}
+
+.rules-body {
+  padding: 1.25rem;
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
+.rules-body section {
+  margin-bottom: 1.1rem;
+}
+
+.rules-body section:last-child {
+  margin-bottom: 0;
+}
+
+.rules-body h4 {
+  margin: 0 0 0.4rem;
+  color: var(--accent);
+  font-size: 1rem;
+}
+
+.rules-body p {
+  margin: 0.3rem 0;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.rules-body ul {
+  margin: 0.3rem 0;
+  padding-left: 1.3rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.rules-body strong {
+  color: var(--text);
+}

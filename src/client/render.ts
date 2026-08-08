@@ -2,6 +2,7 @@ import type { Card, Color, GameStateView, PlayerView, TokenColor } from '../shar
 import { renderBank, renderTiers } from './components/board.js';
 import { renderPassBar, renderTakeTwoConfirmBar, renderToast, renderTokenSelectionBar } from './components/interactions.js';
 import { renderNobles } from './components/nobles.js';
+import { renderRulesButton, renderRulesModal } from './components/rules.js';
 import type { PendingCardAction } from './pendingCardAction.js';
 
 export interface RenderContext {
@@ -10,6 +11,7 @@ export interface RenderContext {
   pendingCardAction: PendingCardAction | null;
   pendingTakeTwo: Color | null;
   error: { code: string; message: string } | null;
+  showRules: boolean;
 }
 
 export function canAffordCost(
@@ -114,18 +116,22 @@ export function renderGame(state: GameStateView, ctx: RenderContext): string {
 
   return `
     ${winnerBanner(state)}
-    <div class="turn-banner">${
-      state.phase === 'finished'
-        ? 'Game over'
-        : myTurn
-          ? "It's your turn"
-          : `Waiting for ${state.players[state.currentPlayerIndex]?.name ?? '...'}`
-    }</div>
+    <div class="top-bar">
+      <div class="turn-banner">${
+        state.phase === 'finished'
+          ? 'Game over'
+          : myTurn
+            ? "It's your turn"
+            : `Waiting for ${state.players[state.currentPlayerIndex]?.name ?? '...'}`
+      }</div>
+      ${renderRulesButton()}
+    </div>
     <div class="board-main">
       ${renderNobles(state.nobles, state.players)}
       ${renderTiers(state, canAffordFaceUp, ctx.pendingCardAction)}
       ${renderBank(state.bank, myTurn, ctx.tokenSelection, ctx.pendingTakeTwo, bankActionHtml)}
     </div>
     ${renderToast(ctx.error)}
+    ${renderRulesModal(ctx.showRules)}
   `;
 }

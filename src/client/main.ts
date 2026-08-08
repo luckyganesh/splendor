@@ -3,6 +3,7 @@ import type { ServerMessage } from '../shared/protocol.js';
 import { initChat } from './chat.js';
 import { renderMyPanel, renderOpponents } from './components/playerPanel.js';
 import { renderPendingModal, renderToast } from './components/interactions.js';
+import { renderRulesModal } from './components/rules.js';
 import { renderLobbyEntry, renderWaitingRoom } from './lobby.js';
 import type { PendingCardAction } from './pendingCardAction.js';
 import { canAffordCost, renderGame } from './render.js';
@@ -29,6 +30,7 @@ interface AppState {
   discardSelection: Partial<Record<TokenColor, number>>;
   pendingCardAction: PendingCardAction | null;
   pendingTakeTwo: Color | null;
+  showRules: boolean;
 }
 
 const app: AppState = {
@@ -43,6 +45,7 @@ const app: AppState = {
   discardSelection: {},
   pendingCardAction: null,
   pendingTakeTwo: null,
+  showRules: false,
 };
 
 const socket = new GameSocket();
@@ -94,7 +97,7 @@ function loadIdentity(): StoredIdentity | null {
 
 function render() {
   if (app.screen === 'entry' || !app.lastState) {
-    root.innerHTML = renderLobbyEntry(app.status) + renderToast(app.error);
+    root.innerHTML = renderLobbyEntry(app.status) + renderToast(app.error) + renderRulesModal(app.showRules);
     bindEntryForms();
     return;
   }
@@ -104,7 +107,9 @@ function render() {
     myPanelDock.classList.add('hidden');
     const isHost = app.lastState.players[0]?.id === app.myPlayerId;
     const canStart = app.lastState.players.length >= 2 && app.lastState.players.length <= 4;
-    root.innerHTML = renderWaitingRoom(app.lastState.roomCode, app.lastState.players, isHost, canStart);
+    root.innerHTML =
+      renderWaitingRoom(app.lastState.roomCode, app.lastState.players, isHost, canStart) +
+      renderRulesModal(app.showRules);
     return;
   }
 
@@ -123,6 +128,7 @@ function render() {
       pendingCardAction: app.pendingCardAction,
       pendingTakeTwo: app.pendingTakeTwo,
       error: app.error,
+      showRules: app.showRules,
     }) + renderPendingModal(state.pendingAction, app.myPlayerId, me?.tokens ?? null, app.discardSelection, state);
 
   opponentsDock.classList.remove('hidden');
@@ -378,6 +384,23 @@ document.body.addEventListener('click', (event) => {
       returnToEntry();
       return;
     }
+    case 'open-rules': {
+      app.showRules = true;
+      render();
+      return;
+    }
+    case 'close-rules': {
+      app.showRules = false;
+      render();
+      return;
+    }
+  }
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && app.showRules) {
+    app.showRules = false;
+    render();
   }
 });
 
