@@ -384,6 +384,22 @@ input {
   flex: 1;
 }
 
+/* Cost tokens are the smallest gem icons in the game (24px base) and read as
+   a blur at a glance — bump them up specifically here without affecting the
+   discard modal or rulebook, which also reuse the "sm" token size. */
+.cost .gem-token {
+  width: 34px;
+  height: 34px;
+}
+
+.cost .gem-emoji {
+  font-size: 24px;
+}
+
+.cost .gem-count {
+  font-size: 0.9rem;
+}
+
 .card-actions {
   display: flex;
   gap: 0.35rem;
