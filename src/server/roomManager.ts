@@ -32,6 +32,7 @@ export class RoomManager {
       }
       const room = Room.fromSnapshot(snapshot);
       this.registerRoom(room);
+      room.scheduleBotTurnIfNeeded();
       restored++;
     }
     if (restored > 0) console.log(`Restored ${restored} room(s) from ${this.dataDir}`);
@@ -57,6 +58,7 @@ export class RoomManager {
     for (const [code, room] of this.rooms) {
       if (now - new Date(room.updatedAt).getTime() <= ROOM_EXPIRY_MS) continue;
       if (room.players.some((p) => p.socket !== null)) continue;
+      room.clearBotTimer();
       this.rooms.delete(code);
       deleteSnapshot(this.dataDir, code);
       console.log(`Pruned expired room ${code} (inactive >8h)`);

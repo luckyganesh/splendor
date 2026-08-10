@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { InternalGameState } from '../../engine/setup.js';
-import type { ChatMessage } from '../../shared/types.js';
+import type { BotDifficulty, ChatMessage } from '../../shared/types.js';
 
 export interface RoomSnapshot {
   schemaVersion: 1;
@@ -9,7 +9,7 @@ export interface RoomSnapshot {
   createdAt: string;
   updatedAt: string;
   hostPlayerId: string;
-  players: { id: string; name: string; secretHash: string }[];
+  players: { id: string; name: string; secretHash: string; isBot?: boolean; botDifficulty?: BotDifficulty }[];
   engineState: InternalGameState | null;
   // Optional: older snapshots (pre-chat feature) won't have this field.
   chatLog?: ChatMessage[];

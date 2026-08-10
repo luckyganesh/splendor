@@ -142,6 +142,23 @@ function handleMessage(
       const error = state.room.startGame(state.playerId);
       if (error) return send(ws, error);
       state.room.broadcast();
+      state.room.scheduleBotTurnIfNeeded();
+      return;
+    }
+
+    case 'add_bot': {
+      if (!state.room || !state.playerId) return sendErrorCode(ws, 'BAD_MESSAGE', 'Join a room first');
+      const error = state.room.addBot(state.playerId, message.difficulty);
+      if (error) return send(ws, error);
+      state.room.broadcast();
+      return;
+    }
+
+    case 'remove_bot': {
+      if (!state.room || !state.playerId) return sendErrorCode(ws, 'BAD_MESSAGE', 'Join a room first');
+      const error = state.room.removeBot(state.playerId, message.playerId);
+      if (error) return send(ws, error);
+      state.room.broadcast();
       return;
     }
 
@@ -165,6 +182,7 @@ function handleMessage(
       const error = state.room.applyGameplayAction(state.playerId, message);
       if (error) return send(ws, error);
       state.room.broadcast();
+      state.room.scheduleBotTurnIfNeeded();
       return;
     }
   }

@@ -11,6 +11,7 @@ function player(id: string, overrides: Partial<any> = {}) {
     id,
     name: id,
     connected: true,
+    isBot: false,
     tokens: { white: 0, blue: 0, green: 0, red: 0, black: 0, gold: 0 },
     bonuses: { white: 0, blue: 0, green: 0, red: 0, black: 0 },
     purchasedCards: [],

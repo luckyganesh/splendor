@@ -376,6 +376,15 @@ document.body.addEventListener('click', (event) => {
       socket.send({ type: 'start_game' });
       return;
     }
+    case 'add-bot': {
+      const difficulty = el.dataset.difficulty as 'easy' | 'medium' | 'hard';
+      socket.send({ type: 'add_bot', difficulty });
+      return;
+    }
+    case 'remove-bot': {
+      socket.send({ type: 'remove_bot', playerId: el.dataset.playerId! });
+      return;
+    }
     case 'leave-room': {
       if (app.lastState?.phase === 'in_progress' && !window.confirm('Leave this game? You can rejoin later using the room code and your name.')) {
         return;

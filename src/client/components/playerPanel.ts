@@ -92,7 +92,7 @@ export function renderOpponents(state: GameStateView, myPlayerId: string | null)
         <div class="opponent-tile ${isCurrent ? 'player-current' : ''}" data-player-id="${p.id}">
           <div class="player-header">
             <span class="conn-dot ${p.connected ? 'conn-on' : 'conn-off'}"></span>
-            <span class="player-name">${escapeHtml(p.name)}</span>
+            <span class="player-name">${escapeHtml(p.name)}${p.isBot ? ' 🤖' : ''}</span>
             <span class="player-points">${p.points} pts</span>
           </div>
           <div class="opponent-body">

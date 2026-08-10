@@ -1,4 +1,4 @@
-import type { ChatMessage, Color, GameStateView, TokenColor } from './types.js';
+import type { BotDifficulty, ChatMessage, Color, GameStateView, TokenColor } from './types.js';
 
 export type CardSource =
   | { kind: 'faceup'; tier: 1 | 2 | 3; slot: number }
@@ -13,6 +13,8 @@ export type ClientMessage =
   | { type: 'join_room'; roomCode: string; playerName: string }
   | { type: 'rejoin'; roomCode: string; playerId: string; secret: string }
   | { type: 'start_game' }
+  | { type: 'add_bot'; difficulty: BotDifficulty }
+  | { type: 'remove_bot'; playerId: string }
   | { type: 'take_tokens'; colors: Color[] }
   | { type: 'take_two_same'; color: Color }
   | { type: 'reserve_card'; source: CardSource }
@@ -31,6 +33,7 @@ export type ErrorCode =
   | 'GAME_NOT_IN_PROGRESS'
   | 'NOT_YOUR_TURN'
   | 'NOT_ENOUGH_PLAYERS'
+  | 'BOT_NOT_FOUND'
   | 'REJOIN_FAILED'
   | 'INVALID_TOKEN_SELECTION'
   | 'PILE_TOO_LOW'

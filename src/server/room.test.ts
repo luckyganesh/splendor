@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Room } from './room.js';
 
 function fakeSocket() {
@@ -60,5 +60,108 @@ describe('Room.join — reconnect by name', () => {
     room.detachSocket(playerId); // host starts disconnected in this scenario
     const result = room.join('ALICE');
     expect(result).toEqual(expect.objectContaining({ ok: true, playerId }));
+  });
+});
+
+describe('Room — bot roster', () => {
+  it('lets the host add bots of each difficulty, numbered per difficulty', () => {
+    const { room, playerId: hostId } = Room.createNew('ABCDE', 'Alice', new Date().toISOString());
+    expect(room.addBot(hostId, 'easy')).toBeNull();
+    expect(room.addBot(hostId, 'easy')).toBeNull();
+    expect(room.addBot(hostId, 'hard')).toBeNull();
+
+    const bots = room.players.filter((p) => p.isBot);
+    expect(bots.map((b) => b.name)).toEqual(['Easy Bot 1', 'Easy Bot 2', 'Hard Bot 1']);
+    expect(bots.every((b) => b.socket === null)).toBe(true);
+  });
+
+  it('rejects a non-host trying to add or remove a bot', () => {
+    const { room, playerId: hostId } = Room.createNew('ABCDE', 'Alice', new Date().toISOString());
+    const bobJoin = room.join('Bob');
+    const bobId = (bobJoin as { ok: true; playerId: string }).playerId;
+
+    expect(room.addBot(bobId, 'easy')).toEqual({
+      type: 'error',
+      code: 'NOT_YOUR_TURN',
+      message: 'Only the host can add bots',
+    });
+
+    room.addBot(hostId, 'easy');
+    const botId = room.players.find((p) => p.isBot)!.id;
+    expect(room.removeBot(bobId, botId)).toEqual({
+      type: 'error',
+      code: 'NOT_YOUR_TURN',
+      message: 'Only the host can remove bots',
+    });
+  });
+
+  it('refuses to add a bot once the room is full', () => {
+    const { room, playerId: hostId } = Room.createNew('ABCDE', 'Alice', new Date().toISOString());
+    room.addBot(hostId, 'easy');
+    room.addBot(hostId, 'easy');
+    room.addBot(hostId, 'easy');
+    expect(room.players.length).toBe(4);
+    expect(room.addBot(hostId, 'easy')).toEqual({ type: 'error', code: 'ROOM_FULL', message: 'Room is full' });
+  });
+
+  it('errors removing an id that is not a bot in this room', () => {
+    const { room, playerId: hostId } = Room.createNew('ABCDE', 'Alice', new Date().toISOString());
+    expect(room.removeBot(hostId, hostId)).toEqual({
+      type: 'error',
+      code: 'BOT_NOT_FOUND',
+      message: 'No such bot in this room',
+    });
+    expect(room.removeBot(hostId, 'nonexistent')).toEqual({
+      type: 'error',
+      code: 'BOT_NOT_FOUND',
+      message: 'No such bot in this room',
+    });
+  });
+
+  it('lets a solo host start a game once a bot fills the second seat', () => {
+    const { room, playerId: hostId } = Room.createNew('ABCDE', 'Alice', new Date().toISOString());
+    room.addBot(hostId, 'medium');
+    const error = room.startGame(hostId);
+    expect(error).toBeNull();
+    expect(room.phase).toBe('in_progress');
+  });
+});
+
+describe('Room — bot turns', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('auto-plays bot turns until it is the human player\'s turn again', () => {
+    const { room, playerId: hostId } = Room.createNew('ABCDE', 'Alice', new Date().toISOString());
+    room.addBot(hostId, 'easy');
+    room.addBot(hostId, 'easy');
+    room.startGame(hostId);
+    room.scheduleBotTurnIfNeeded();
+
+    const internal = () => room.engine!.getInternalState();
+    expect(internal().currentPlayerIndex).toBe(0); // host goes first
+
+    // Host takes a turn, then both bots should play automatically.
+    room.applyGameplayAction(hostId, { type: 'take_tokens', colors: ['white', 'blue', 'green'] });
+    room.scheduleBotTurnIfNeeded();
+    expect(internal().currentPlayerIndex).toBe(1); // bot 1's turn, not yet run
+
+    vi.runAllTimers();
+
+    expect(internal().currentPlayerIndex).toBe(0); // back around to the host
+    expect(internal().turnNumber).toBeGreaterThan(1);
+  });
+
+  it('does not schedule a bot turn while it is a human seat\'s turn', () => {
+    const { room, playerId: hostId } = Room.createNew('ABCDE', 'Alice', new Date().toISOString());
+    room.addBot(hostId, 'easy');
+    room.startGame(hostId);
+    room.scheduleBotTurnIfNeeded();
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

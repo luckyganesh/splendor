@@ -1,31 +1,8 @@
-import type { ClientMessage } from '../shared/protocol.js';
 import type { GameStateView, PlayerView, TierView } from '../shared/types.js';
-import {
-  type ActionResult,
-  chooseNoble,
-  discardTokens,
-  pass,
-  playerPoints,
-  purchaseCard,
-  reserveCard,
-  takeTokens,
-  takeTwoSame,
-} from './actions.js';
+import { type ActionResult, type GameplayMessage, applyGameplayMessage, playerPoints } from './actions.js';
 import type { InternalGameState } from './setup.js';
 
-type GameplayMessage = Extract<
-  ClientMessage,
-  {
-    type:
-      | 'take_tokens'
-      | 'take_two_same'
-      | 'reserve_card'
-      | 'purchase_card'
-      | 'discard_tokens'
-      | 'choose_noble'
-      | 'pass';
-  }
->;
+export type { GameplayMessage } from './actions.js';
 
 export class GameEngine {
   private state: InternalGameState;
@@ -40,32 +17,7 @@ export class GameEngine {
 
   applyAction(playerId: string, message: GameplayMessage): ActionResult {
     const clone = structuredClone(this.state);
-    let result: ActionResult;
-
-    switch (message.type) {
-      case 'take_tokens':
-        result = takeTokens(clone, playerId, message.colors);
-        break;
-      case 'take_two_same':
-        result = takeTwoSame(clone, playerId, message.color);
-        break;
-      case 'reserve_card':
-        result = reserveCard(clone, playerId, message.source);
-        break;
-      case 'purchase_card':
-        result = purchaseCard(clone, playerId, message.source);
-        break;
-      case 'discard_tokens':
-        result = discardTokens(clone, playerId, message.tokens);
-        break;
-      case 'choose_noble':
-        result = chooseNoble(clone, playerId, message.nobleId);
-        break;
-      case 'pass':
-        result = pass(clone, playerId);
-        break;
-    }
-
+    const result = applyGameplayMessage(clone, playerId, message);
     if (result.ok) this.state = result.state;
     return result;
   }
@@ -77,6 +29,7 @@ export class GameEngine {
       id: p.id,
       name: p.name,
       connected: true,
+      isBot: false,
       tokens: { ...p.tokens },
       bonuses: { ...p.bonuses },
       purchasedCards: p.purchasedCards,

@@ -22,20 +22,46 @@ export function renderLobbyEntry(status: 'connecting' | 'open' | 'closed'): stri
     </div>`;
 }
 
+interface WaitingPlayer {
+  id: string;
+  name: string;
+  connected: boolean;
+  isBot: boolean;
+  botDifficulty?: 'easy' | 'medium' | 'hard';
+}
+
 export function renderWaitingRoom(
   roomCode: string,
-  players: { id: string; name: string; connected: boolean }[],
+  players: WaitingPlayer[],
   isHost: boolean,
   canStart: boolean,
 ): string {
+  const atCapacity = players.length >= 4;
   const rows = players
-    .map((p) => `<li class="${p.connected ? '' : 'player-offline'}">${escapeHtml(p.name)}</li>`)
+    .map((p) => {
+      const label = p.isBot
+        ? ` 🤖${p.botDifficulty ? ` (${p.botDifficulty})` : ''}`
+        : '';
+      const removeButton =
+        isHost && p.isBot ? `<button data-action="remove-bot" data-player-id="${p.id}" class="secondary bot-remove">✕</button>` : '';
+      return `<li class="${p.connected ? '' : 'player-offline'}"><span>${escapeHtml(p.name)}${label}</span>${removeButton}</li>`;
+    })
     .join('');
+  const addBotControls = isHost
+    ? `
+      <div class="add-bot-controls">
+        <span class="hint">Add a bot:</span>
+        <button data-action="add-bot" data-difficulty="easy" ${atCapacity ? 'disabled' : ''}>Easy</button>
+        <button data-action="add-bot" data-difficulty="medium" ${atCapacity ? 'disabled' : ''}>Medium</button>
+        <button data-action="add-bot" data-difficulty="hard" ${atCapacity ? 'disabled' : ''}>Hard</button>
+      </div>`
+    : '';
   return `
     <div class="lobby-entry">
       <h1>Splendor</h1>
       <p>Room code: <strong class="room-code">${roomCode}</strong> — share this with your friends</p>
       <ul class="waiting-list">${rows}</ul>
+      ${addBotControls}
       ${
         isHost
           ? `<button data-action="start-game" ${canStart ? '' : 'disabled'}>Start game</button>

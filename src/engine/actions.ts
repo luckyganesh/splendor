@@ -1,5 +1,5 @@
 import { WINNING_POINTS } from '../shared/constants.js';
-import type { CardSource, PurchaseSource } from '../shared/protocol.js';
+import type { CardSource, ClientMessage, PurchaseSource } from '../shared/protocol.js';
 import type { Card, Color, TokenColor } from '../shared/types.js';
 import type { InternalGameState, InternalPlayerState } from './setup.js';
 import { eligibleNobles } from './nobles.js';
@@ -10,6 +10,20 @@ import {
   validateTakeTwoSame,
   wouldExceedTokenLimit,
 } from './validation.js';
+
+export type GameplayMessage = Extract<
+  ClientMessage,
+  {
+    type:
+      | 'take_tokens'
+      | 'take_two_same'
+      | 'reserve_card'
+      | 'purchase_card'
+      | 'discard_tokens'
+      | 'choose_noble'
+      | 'pass';
+  }
+>;
 
 export type ErrorCode =
   | 'NOT_YOUR_TURN'
@@ -291,6 +305,29 @@ function endTurn(state: InternalGameState, actingPlayerId: string): ActionResult
   state.currentPlayerIndex = nextIndex;
   state.turnNumber += 1;
   return { ok: true, state };
+}
+
+export function applyGameplayMessage(
+  state: InternalGameState,
+  playerId: string,
+  message: GameplayMessage,
+): ActionResult {
+  switch (message.type) {
+    case 'take_tokens':
+      return takeTokens(state, playerId, message.colors);
+    case 'take_two_same':
+      return takeTwoSame(state, playerId, message.color);
+    case 'reserve_card':
+      return reserveCard(state, playerId, message.source);
+    case 'purchase_card':
+      return purchaseCard(state, playerId, message.source);
+    case 'discard_tokens':
+      return discardTokens(state, playerId, message.tokens);
+    case 'choose_noble':
+      return chooseNoble(state, playerId, message.nobleId);
+    case 'pass':
+      return pass(state, playerId);
+  }
 }
 
 function computeWinners(state: InternalGameState): string[] {

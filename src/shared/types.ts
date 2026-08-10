@@ -29,10 +29,14 @@ export interface ReservedCardView {
   tier?: 1 | 2 | 3;
 }
 
+export type BotDifficulty = 'easy' | 'medium' | 'hard';
+
 export interface PlayerView {
   id: string;
   name: string;
   connected: boolean;
+  isBot: boolean;
+  botDifficulty?: BotDifficulty;
   tokens: TokenCount;
   bonuses: ColorCount;
   purchasedCards: Card[];

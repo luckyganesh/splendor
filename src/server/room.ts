@@ -1,35 +1,28 @@
 import { randomBytes, createHash } from 'node:crypto';
 import type { WebSocket } from 'ws';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../shared/constants.js';
-import type { ClientMessage, ErrorCode, ServerMessage } from '../shared/protocol.js';
-import type { ChatMessage, GameStateView, PlayerView } from '../shared/types.js';
-import { GameEngine } from '../engine/engine.js';
+import type { ErrorCode, ServerMessage } from '../shared/protocol.js';
+import type { BotDifficulty, ChatMessage, GameStateView, PlayerView } from '../shared/types.js';
+import { GameEngine, type GameplayMessage } from '../engine/engine.js';
+import { decideBotAction } from '../engine/bot.js';
 import { createGame, repairNobleConsistency } from '../engine/setup.js';
 import type { RoomSnapshot } from './persistence/snapshot.js';
 
+export type { GameplayMessage };
+
 const MAX_CHAT_HISTORY = 200;
 const MAX_CHAT_MESSAGE_LENGTH = 500;
+const BOT_MIN_DELAY_MS = 2000;
+const BOT_MAX_DELAY_MS = 3000;
 
 export interface RoomPlayer {
   id: string;
   name: string;
   secretHash: string;
   socket: WebSocket | null;
+  isBot: boolean;
+  botDifficulty?: BotDifficulty;
 }
-
-export type GameplayMessage = Extract<
-  ClientMessage,
-  {
-    type:
-      | 'take_tokens'
-      | 'take_two_same'
-      | 'reserve_card'
-      | 'purchase_card'
-      | 'discard_tokens'
-      | 'choose_noble'
-      | 'pass';
-  }
->;
 
 function hashSecret(secret: string): string {
   return createHash('sha256').update(secret).digest('hex');
@@ -52,6 +45,7 @@ export class Room {
   createdAt: string;
   updatedAt: string;
   onChange: (() => void) | null = null;
+  private botTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(roomCode: string, hostPlayerId: string, createdAt: string) {
     this.roomCode = roomCode;
@@ -68,7 +62,7 @@ export class Room {
     const playerId = generatePlayerId();
     const secret = generateSecret();
     const room = new Room(roomCode, playerId, now);
-    room.players.push({ id: playerId, name: hostName, secretHash: hashSecret(secret), socket: null });
+    room.players.push({ id: playerId, name: hostName, secretHash: hashSecret(secret), socket: null, isBot: false });
     return { room, playerId, secret };
   }
 
@@ -94,8 +88,41 @@ export class Room {
     if (this.players.length >= MAX_PLAYERS) return { ok: false, code: 'ROOM_FULL', message: 'Room is full' };
     const playerId = generatePlayerId();
     const secret = generateSecret();
-    this.players.push({ id: playerId, name: playerName, secretHash: hashSecret(secret), socket: null });
+    this.players.push({ id: playerId, name: playerName, secretHash: hashSecret(secret), socket: null, isBot: false });
     return { ok: true, playerId, secret };
+  }
+
+  /** Host-only, lobby-only: seats a computer-controlled player so solo play is possible. */
+  addBot(requestingPlayerId: string, difficulty: BotDifficulty): ServerMessage | null {
+    if (this.phase !== 'lobby') return { type: 'error', code: 'GAME_ALREADY_STARTED', message: 'Game already started' };
+    if (requestingPlayerId !== this.hostPlayerId) {
+      return { type: 'error', code: 'NOT_YOUR_TURN', message: 'Only the host can add bots' };
+    }
+    if (this.players.length >= MAX_PLAYERS) return { type: 'error', code: 'ROOM_FULL', message: 'Room is full' };
+
+    const existingOfDifficulty = this.players.filter((p) => p.isBot && p.botDifficulty === difficulty).length;
+    const label = difficulty[0].toUpperCase() + difficulty.slice(1);
+    this.players.push({
+      id: generatePlayerId(),
+      name: `${label} Bot ${existingOfDifficulty + 1}`,
+      secretHash: hashSecret(generateSecret()),
+      socket: null,
+      isBot: true,
+      botDifficulty: difficulty,
+    });
+    return null;
+  }
+
+  /** Host-only, lobby-only: removes a previously added bot from the room. */
+  removeBot(requestingPlayerId: string, botPlayerId: string): ServerMessage | null {
+    if (this.phase !== 'lobby') return { type: 'error', code: 'GAME_ALREADY_STARTED', message: 'Game already started' };
+    if (requestingPlayerId !== this.hostPlayerId) {
+      return { type: 'error', code: 'NOT_YOUR_TURN', message: 'Only the host can remove bots' };
+    }
+    const bot = this.players.find((p) => p.id === botPlayerId && p.isBot);
+    if (!bot) return { type: 'error', code: 'BOT_NOT_FOUND', message: 'No such bot in this room' };
+    this.players = this.players.filter((p) => p.id !== botPlayerId);
+    return null;
   }
 
   rejoin(playerId: string, secret: string): RoomPlayer | null {
@@ -138,9 +165,57 @@ export class Room {
     return null;
   }
 
+  /**
+   * Whichever seat must act next (the current player, or whoever owes a pending
+   * discard/noble choice) — if it's a bot, schedule its move after a short "thinking"
+   * delay. Safe to call after any state change; no-ops if a bot turn is already queued
+   * or nobody currently owes a bot move.
+   */
+  scheduleBotTurnIfNeeded() {
+    if (this.botTimer) return;
+    if (!this.engine || this.phase !== 'in_progress') return;
+
+    const state = this.engine.getInternalState();
+    const actingId = state.pendingAction?.playerId ?? state.players[state.currentPlayerIndex]?.id;
+    const bot = this.players.find((p) => p.id === actingId);
+    if (!bot?.isBot || !bot.botDifficulty) return;
+
+    const delay = BOT_MIN_DELAY_MS + Math.random() * (BOT_MAX_DELAY_MS - BOT_MIN_DELAY_MS);
+    this.botTimer = setTimeout(() => this.runBotTurn(bot.id), delay);
+  }
+
+  private runBotTurn(botId: string) {
+    this.botTimer = null;
+    if (!this.engine || this.phase !== 'in_progress') return;
+
+    const bot = this.players.find((p) => p.id === botId);
+    if (!bot?.isBot || !bot.botDifficulty) return;
+    const state = this.engine.getInternalState();
+    const stillOwesMove = (state.pendingAction?.playerId ?? state.players[state.currentPlayerIndex]?.id) === botId;
+    if (!stillOwesMove) return;
+
+    const action = decideBotAction(state, botId, bot.botDifficulty, Math.random);
+    const result = this.engine.applyAction(botId, action);
+    if (!result.ok) this.engine.applyAction(botId, { type: 'pass' });
+
+    this.broadcast();
+    this.scheduleBotTurnIfNeeded();
+  }
+
+  clearBotTimer() {
+    if (this.botTimer) clearTimeout(this.botTimer);
+    this.botTimer = null;
+  }
+
   currentView(viewerPlayerId: string | null): GameStateView {
-    if (this.engine) return this.engine.currentView(viewerPlayerId);
-    return this.lobbyView();
+    const view = this.engine ? this.engine.currentView(viewerPlayerId) : this.lobbyView();
+    return {
+      ...view,
+      players: view.players.map((pv) => {
+        const player = this.players.find((p) => p.id === pv.id);
+        return { ...pv, isBot: player?.isBot ?? false, botDifficulty: player?.botDifficulty };
+      }),
+    };
   }
 
   private lobbyView(): GameStateView {
@@ -148,6 +223,8 @@ export class Room {
       id: p.id,
       name: p.name,
       connected: p.socket !== null,
+      isBot: p.isBot,
+      botDifficulty: p.botDifficulty,
       tokens: { white: 0, blue: 0, green: 0, red: 0, black: 0, gold: 0 },
       bonuses: { white: 0, blue: 0, green: 0, red: 0, black: 0 },
       purchasedCards: [],
@@ -231,7 +308,13 @@ export class Room {
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
       hostPlayerId: this.hostPlayerId,
-      players: this.players.map((p) => ({ id: p.id, name: p.name, secretHash: p.secretHash })),
+      players: this.players.map((p) => ({
+        id: p.id,
+        name: p.name,
+        secretHash: p.secretHash,
+        isBot: p.isBot,
+        botDifficulty: p.botDifficulty,
+      })),
       engineState: this.engine ? this.engine.getInternalState() : null,
       chatLog: this.chatLog,
     };
@@ -240,7 +323,7 @@ export class Room {
   static fromSnapshot(snapshot: RoomSnapshot): Room {
     const room = new Room(snapshot.roomCode, snapshot.hostPlayerId, snapshot.createdAt);
     room.updatedAt = snapshot.updatedAt;
-    room.players = snapshot.players.map((p) => ({ ...p, socket: null }));
+    room.players = snapshot.players.map((p) => ({ ...p, socket: null, isBot: p.isBot ?? false }));
     if (snapshot.engineState) repairNobleConsistency(snapshot.engineState);
     room.engine = snapshot.engineState ? new GameEngine(snapshot.engineState) : null;
     room.chatLog = Array.isArray(snapshot.chatLog) ? snapshot.chatLog : [];
