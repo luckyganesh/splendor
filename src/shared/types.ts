@@ -76,3 +76,9 @@ export interface ChatMessage {
   text: string;
   ts: string;
 }
+
+export interface ActivityEntry {
+  id: string;
+  text: string;
+  ts: string;
+}

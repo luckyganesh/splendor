@@ -186,3 +186,44 @@ describe('Room — bot turns', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 });
+
+describe('Room — activity log', () => {
+  it('records adding/removing a bot, starting the game, and a human\'s move', () => {
+    const { room, playerId: hostId } = Room.createNew('ABCDE', 'Alice', new Date().toISOString());
+    room.addBot(hostId, 'easy');
+    const botId = room.players.find((p) => p.isBot)!.id;
+    const botName = room.players.find((p) => p.isBot)!.name;
+    room.removeBot(hostId, botId);
+    room.addBot(hostId, 'medium');
+    room.startGame(hostId);
+    room.applyGameplayAction(hostId, { type: 'take_tokens', colors: ['white', 'blue', 'green'] });
+
+    const texts = room.activityLog.map((e) => e.text);
+    expect(texts[0]).toBe(`Alice added ${botName} (Easy bot) to the room.`);
+    expect(texts[1]).toBe(`Alice removed ${botName}.`);
+    expect(texts[2]).toMatch(/^Alice added .+ \(Medium bot\) to the room\.$/);
+    expect(texts[3]).toBe('The game has started.');
+    expect(texts[4]).toBe('Alice took White, Blue, and Green tokens.');
+  });
+
+  it('announces the winner as the final activity entry when the game ends', () => {
+    const { room, playerId: hostId } = Room.createNew('ABCDE', 'Alice', new Date().toISOString());
+    const bobJoin = room.join('Bob');
+    const bobId = (bobJoin as { ok: true; playerId: string }).playerId;
+    room.startGame(hostId);
+
+    // Give the host 15 points up front so their very next move ends the game.
+    room.engine!.getInternalState().players[0].purchasedCards.push({
+      id: 'big',
+      tier: 3,
+      color: 'white',
+      points: 15,
+      cost: {},
+    });
+    room.applyGameplayAction(hostId, { type: 'take_tokens', colors: ['white', 'blue', 'green'] });
+    room.applyGameplayAction(bobId, { type: 'take_tokens', colors: ['white', 'blue', 'green'] });
+
+    expect(room.engine!.getInternalState().phase).toBe('finished');
+    expect(room.activityLog.at(-1)?.text).toBe('Alice won the game!');
+  });
+});

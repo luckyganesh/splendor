@@ -97,6 +97,7 @@ function handleMessage(
       state.playerId = playerId;
       send(ws, { type: 'room_created', roomCode: room.roomCode, playerId, secret });
       send(ws, { type: 'chat_history', messages: room.chatLog });
+      send(ws, { type: 'activity_history', entries: room.activityLog });
       room.broadcast();
       return;
     }
@@ -111,6 +112,7 @@ function handleMessage(
       state.playerId = result.playerId;
       send(ws, { type: 'joined', roomCode: room.roomCode, playerId: result.playerId, secret: result.secret });
       send(ws, { type: 'chat_history', messages: room.chatLog });
+      send(ws, { type: 'activity_history', entries: room.activityLog });
       room.broadcast();
       return;
     }
@@ -125,6 +127,7 @@ function handleMessage(
       state.playerId = player.id;
       send(ws, { type: 'joined', roomCode: room.roomCode, playerId: player.id, secret: message.secret });
       send(ws, { type: 'chat_history', messages: room.chatLog });
+      send(ws, { type: 'activity_history', entries: room.activityLog });
       room.broadcast();
       return;
     }

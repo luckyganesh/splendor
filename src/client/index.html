@@ -14,12 +14,20 @@
       <div class="dock-row">
         <div id="my-panel-dock" class="my-panel-dock hidden"></div>
         <div id="chat-panel" class="chat-panel">
-          <div class="chat-header"><span>Chat</span></div>
-          <div id="chat-log" class="chat-log"></div>
-          <form id="chat-form" class="chat-form">
-            <input id="chat-input" name="text" placeholder="Say something..." maxlength="500" autocomplete="off" />
-            <button type="submit">Send</button>
-          </form>
+          <div class="panel-tabs">
+            <button type="button" class="panel-tab panel-tab-active" data-panel-tab="activity">Activity</button>
+            <button type="button" class="panel-tab" data-panel-tab="chat">Chat</button>
+          </div>
+          <div class="panel-tab-content panel-tab-content-active" data-panel-tab="activity">
+            <div id="activity-log" class="activity-log"></div>
+          </div>
+          <div class="panel-tab-content" data-panel-tab="chat">
+            <div id="chat-log" class="chat-log"></div>
+            <form id="chat-form" class="chat-form">
+              <input id="chat-input" name="text" placeholder="Say something..." maxlength="500" autocomplete="off" />
+              <button type="submit">Send</button>
+            </form>
+          </div>
         </div>
       </div>
     </div>

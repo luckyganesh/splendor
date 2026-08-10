@@ -1,10 +1,12 @@
 import type { Color, GameStateView, TokenColor } from '../shared/types.js';
 import type { ServerMessage } from '../shared/protocol.js';
+import { initActivityLog } from './activityLog.js';
 import { initChat } from './chat.js';
 import { renderMyPanel, renderOpponents } from './components/playerPanel.js';
 import { renderPendingModal, renderToast } from './components/interactions.js';
 import { renderRulesModal } from './components/rules.js';
 import { renderLobbyEntry, renderWaitingRoom } from './lobby.js';
+import { initPanelTabs } from './panelTabs.js';
 import type { PendingCardAction } from './pendingCardAction.js';
 import { canAffordCost, renderGame } from './render.js';
 import { GameSocket } from './socket.js';
@@ -54,6 +56,8 @@ const gameDock = document.getElementById('game-dock')!;
 const opponentsDock = document.getElementById('opponents-dock')!;
 const myPanelDock = document.getElementById('my-panel-dock')!;
 const chat = initChat(socket, () => app.myPlayerId);
+const activityLog = initActivityLog();
+initPanelTabs();
 
 function saveIdentity() {
   if (app.roomCode && app.myPlayerId && app.secret) {
@@ -201,6 +205,14 @@ socket.onMessage = (message: ServerMessage) => {
     }
     case 'chat': {
       chat.appendMessage(message.message);
+      return;
+    }
+    case 'activity_history': {
+      activityLog.setHistory(message.entries);
+      return;
+    }
+    case 'activity': {
+      activityLog.appendEntry(message.entry);
       return;
     }
     case 'state': {

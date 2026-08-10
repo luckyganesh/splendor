@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { InternalGameState } from '../../engine/setup.js';
-import type { BotDifficulty, ChatMessage } from '../../shared/types.js';
+import type { ActivityEntry, BotDifficulty, ChatMessage } from '../../shared/types.js';
 
 export interface RoomSnapshot {
   schemaVersion: 1;
@@ -15,6 +15,8 @@ export interface RoomSnapshot {
   chatLog?: ChatMessage[];
   // Optional: older snapshots (pre-bots) won't have this field.
   botNameBags?: Partial<Record<BotDifficulty, string[]>>;
+  // Optional: older snapshots (pre-activity-log feature) won't have this field.
+  activityLog?: ActivityEntry[];
 }
 
 function isValidSnapshot(value: unknown): value is RoomSnapshot {

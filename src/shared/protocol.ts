@@ -1,4 +1,4 @@
-import type { BotDifficulty, ChatMessage, Color, GameStateView, TokenColor } from './types.js';
+import type { ActivityEntry, BotDifficulty, ChatMessage, Color, GameStateView, TokenColor } from './types.js';
 
 export type CardSource =
   | { kind: 'faceup'; tier: 1 | 2 | 3; slot: number }
@@ -50,4 +50,6 @@ export type ServerMessage =
   | { type: 'state'; state: GameStateView }
   | { type: 'error'; code: ErrorCode; message: string }
   | { type: 'chat'; message: ChatMessage }
-  | { type: 'chat_history'; messages: ChatMessage[] };
+  | { type: 'chat_history'; messages: ChatMessage[] }
+  | { type: 'activity'; entry: ActivityEntry }
+  | { type: 'activity_history'; entries: ActivityEntry[] };

@@ -2,10 +2,12 @@ import { randomBytes, createHash } from 'node:crypto';
 import type { WebSocket } from 'ws';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../shared/constants.js';
 import type { ErrorCode, ServerMessage } from '../shared/protocol.js';
-import type { BotDifficulty, ChatMessage, GameStateView, PlayerView } from '../shared/types.js';
+import type { ActivityEntry, BotDifficulty, ChatMessage, GameStateView, PlayerView } from '../shared/types.js';
 import { GameEngine, type GameplayMessage } from '../engine/engine.js';
+import type { ActionResult } from '../engine/actions.js';
 import { decideBotAction } from '../engine/bot.js';
 import { createGame, repairNobleConsistency } from '../engine/setup.js';
+import { capitalize, describeGameFinished, describeGameplayAction } from './activityLog.js';
 import { drawBotName } from './botNames.js';
 import type { RoomSnapshot } from './persistence/snapshot.js';
 
@@ -13,6 +15,7 @@ export type { GameplayMessage };
 
 const MAX_CHAT_HISTORY = 200;
 const MAX_CHAT_MESSAGE_LENGTH = 500;
+const MAX_ACTIVITY_HISTORY = 200;
 const BOT_MIN_DELAY_MS = 2000;
 const BOT_MAX_DELAY_MS = 3000;
 
@@ -43,6 +46,7 @@ export class Room {
   players: RoomPlayer[] = [];
   engine: GameEngine | null = null;
   chatLog: ChatMessage[] = [];
+  activityLog: ActivityEntry[] = [];
   createdAt: string;
   updatedAt: string;
   onChange: (() => void) | null = null;
@@ -115,6 +119,8 @@ export class Room {
       isBot: true,
       botDifficulty: difficulty,
     });
+    const hostName = this.players.find((p) => p.id === this.hostPlayerId)?.name ?? 'The host';
+    this.recordActivity(`${hostName} added ${name} (${capitalize(difficulty)} bot) to the room.`);
     return null;
   }
 
@@ -127,6 +133,8 @@ export class Room {
     const bot = this.players.find((p) => p.id === botPlayerId && p.isBot);
     if (!bot) return { type: 'error', code: 'BOT_NOT_FOUND', message: 'No such bot in this room' };
     this.players = this.players.filter((p) => p.id !== botPlayerId);
+    const hostName = this.players.find((p) => p.id === this.hostPlayerId)?.name ?? 'The host';
+    this.recordActivity(`${hostName} removed ${bot.name}.`);
     return null;
   }
 
@@ -160,14 +168,32 @@ export class Room {
       this.players.map((p) => ({ id: p.id, name: p.name })),
     );
     this.engine = new GameEngine(state);
+    this.recordActivity('The game has started.');
     return null;
   }
 
   applyGameplayAction(playerId: string, message: GameplayMessage): ServerMessage | null {
     if (!this.engine) return { type: 'error', code: 'GAME_NOT_IN_PROGRESS', message: 'Game has not started yet' };
-    const result = this.engine.applyAction(playerId, message);
+    const result = this.applyAndLog(playerId, message);
     if (!result.ok) return { type: 'error', code: result.code, message: result.message };
     return null;
+  }
+
+  /** Applies a gameplay message and, on success, records what happened (and who
+      won, if that was the game-ending move) to the activity log. */
+  private applyAndLog(playerId: string, message: GameplayMessage): ActionResult {
+    const player = this.players.find((p) => p.id === playerId);
+    const result = this.engine!.applyAction(playerId, message);
+    if (result.ok && player) {
+      this.recordActivity(describeGameplayAction(player.name, message, result.state, playerId));
+      if (result.state.phase === 'finished' && result.state.winnerIds) {
+        const winnerNames = result.state.winnerIds
+          .map((id) => this.players.find((p) => p.id === id)?.name)
+          .filter((n): n is string => !!n);
+        this.recordActivity(describeGameFinished(winnerNames));
+      }
+    }
+    return result;
   }
 
   /**
@@ -200,8 +226,8 @@ export class Room {
     if (!stillOwesMove) return;
 
     const action = decideBotAction(state, botId, bot.botDifficulty, Math.random);
-    const result = this.engine.applyAction(botId, action);
-    if (!result.ok) this.engine.applyAction(botId, { type: 'pass' });
+    const result = this.applyAndLog(botId, action);
+    if (!result.ok) this.applyAndLog(botId, { type: 'pass' });
 
     this.broadcast();
     this.scheduleBotTurnIfNeeded();
@@ -306,6 +332,19 @@ export class Room {
     this.onChange?.();
   }
 
+  /** Appends a system-generated line (a move, a bot joining, the game starting or
+      ending) to the room's activity log and broadcasts it immediately — this is
+      the "what's happening" feed shown by default instead of chat. */
+  private recordActivity(text: string) {
+    const entry: ActivityEntry = { id: randomBytes(6).toString('hex'), text, ts: new Date().toISOString() };
+    this.activityLog.push(entry);
+    if (this.activityLog.length > MAX_ACTIVITY_HISTORY) this.activityLog.shift();
+    const payload: ServerMessage = { type: 'activity', entry };
+    for (const player of this.players) {
+      player.socket?.send(JSON.stringify(payload));
+    }
+  }
+
   toSnapshot(): RoomSnapshot {
     return {
       schemaVersion: 1,
@@ -322,6 +361,7 @@ export class Room {
       })),
       engineState: this.engine ? this.engine.getInternalState() : null,
       chatLog: this.chatLog,
+      activityLog: this.activityLog,
       botNameBags: this.botNameBags,
     };
   }
@@ -333,6 +373,7 @@ export class Room {
     if (snapshot.engineState) repairNobleConsistency(snapshot.engineState);
     room.engine = snapshot.engineState ? new GameEngine(snapshot.engineState) : null;
     room.chatLog = Array.isArray(snapshot.chatLog) ? snapshot.chatLog : [];
+    room.activityLog = Array.isArray(snapshot.activityLog) ? snapshot.activityLog : [];
     room.botNameBags = snapshot.botNameBags ?? {};
     return room;
   }
