@@ -64,15 +64,36 @@ describe('Room.join — reconnect by name', () => {
 });
 
 describe('Room — bot roster', () => {
-  it('lets the host add bots of each difficulty, numbered per difficulty', () => {
+  it('gives each bot a distinct flavor name drawn from its difficulty pool', () => {
     const { room, playerId: hostId } = Room.createNew('ABCDE', 'Alice', new Date().toISOString());
     expect(room.addBot(hostId, 'easy')).toBeNull();
     expect(room.addBot(hostId, 'easy')).toBeNull();
     expect(room.addBot(hostId, 'hard')).toBeNull();
 
     const bots = room.players.filter((p) => p.isBot);
-    expect(bots.map((b) => b.name)).toEqual(['Easy Bot 1', 'Easy Bot 2', 'Hard Bot 1']);
     expect(bots.every((b) => b.socket === null)).toBe(true);
+    expect(new Set(bots.map((b) => b.name)).size).toBe(3); // all distinct
+    expect(bots[0].name).not.toBe('Easy Bot 1'); // flavor name, not the old generic label
+  });
+
+  it('never reuses a name already taken in the room, even across difficulties', () => {
+    const { room, playerId: hostId } = Room.createNew('ABCDE', 'Alice', new Date().toISOString());
+    room.addBot(hostId, 'easy');
+    room.addBot(hostId, 'medium');
+    room.addBot(hostId, 'hard');
+    const names = room.players.map((p) => p.name.toLowerCase());
+    expect(new Set(names).size).toBe(names.length);
+  });
+
+  it('does not hand out a removed bot\'s name to the next bot added', () => {
+    const { room, playerId: hostId } = Room.createNew('ABCDE', 'Alice', new Date().toISOString());
+    room.addBot(hostId, 'easy');
+    const firstName = room.players.find((p) => p.isBot)!.name;
+    room.removeBot(hostId, room.players.find((p) => p.isBot)!.id);
+
+    room.addBot(hostId, 'easy');
+    const secondName = room.players.find((p) => p.isBot)!.name;
+    expect(secondName).not.toBe(firstName);
   });
 
   it('rejects a non-host trying to add or remove a bot', () => {

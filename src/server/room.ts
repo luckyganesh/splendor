@@ -6,6 +6,7 @@ import type { BotDifficulty, ChatMessage, GameStateView, PlayerView } from '../s
 import { GameEngine, type GameplayMessage } from '../engine/engine.js';
 import { decideBotAction } from '../engine/bot.js';
 import { createGame, repairNobleConsistency } from '../engine/setup.js';
+import { drawBotName } from './botNames.js';
 import type { RoomSnapshot } from './persistence/snapshot.js';
 
 export type { GameplayMessage };
@@ -46,6 +47,9 @@ export class Room {
   updatedAt: string;
   onChange: (() => void) | null = null;
   private botTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Per-difficulty shuffle bag of not-yet-dealt bot names for this room — see
+      drawBotName() for why this is a bag rather than a permanent used-names set. */
+  private botNameBags: Partial<Record<BotDifficulty, string[]>> = {};
 
   constructor(roomCode: string, hostPlayerId: string, createdAt: string) {
     this.roomCode = roomCode;
@@ -100,11 +104,12 @@ export class Room {
     }
     if (this.players.length >= MAX_PLAYERS) return { type: 'error', code: 'ROOM_FULL', message: 'Room is full' };
 
-    const existingOfDifficulty = this.players.filter((p) => p.isBot && p.botDifficulty === difficulty).length;
-    const label = difficulty[0].toUpperCase() + difficulty.slice(1);
+    const currentlyUsedNames = new Set(this.players.map((p) => p.name.toLowerCase()));
+    const { name, remainingBag } = drawBotName(this.botNameBags[difficulty] ?? [], difficulty, currentlyUsedNames);
+    this.botNameBags[difficulty] = remainingBag;
     this.players.push({
       id: generatePlayerId(),
-      name: `${label} Bot ${existingOfDifficulty + 1}`,
+      name,
       secretHash: hashSecret(generateSecret()),
       socket: null,
       isBot: true,
@@ -317,6 +322,7 @@ export class Room {
       })),
       engineState: this.engine ? this.engine.getInternalState() : null,
       chatLog: this.chatLog,
+      botNameBags: this.botNameBags,
     };
   }
 
@@ -327,6 +333,7 @@ export class Room {
     if (snapshot.engineState) repairNobleConsistency(snapshot.engineState);
     room.engine = snapshot.engineState ? new GameEngine(snapshot.engineState) : null;
     room.chatLog = Array.isArray(snapshot.chatLog) ? snapshot.chatLog : [];
+    room.botNameBags = snapshot.botNameBags ?? {};
     return room;
   }
 }

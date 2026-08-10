@@ -13,6 +13,8 @@ export interface RoomSnapshot {
   engineState: InternalGameState | null;
   // Optional: older snapshots (pre-chat feature) won't have this field.
   chatLog?: ChatMessage[];
+  // Optional: older snapshots (pre-bots) won't have this field.
+  botNameBags?: Partial<Record<BotDifficulty, string[]>>;
 }
 
 function isValidSnapshot(value: unknown): value is RoomSnapshot {
