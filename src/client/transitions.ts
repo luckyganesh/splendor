@@ -1,4 +1,4 @@
-import type { GameStateView, TokenColor } from '../shared/types.js';
+import type { GameStateView, ReservedCardView, TokenColor } from '../shared/types.js';
 import { gemToken } from './gems.js';
 
 const TOKEN_COLORS: TokenColor[] = ['white', 'blue', 'green', 'red', 'black', 'gold'];
@@ -7,7 +7,19 @@ export type TransitionEvent =
   | { kind: 'card-purchased'; tier: 1 | 2 | 3; slot: number; toPlayerId: string }
   | { kind: 'card-reserved-faceup'; tier: 1 | 2 | 3; slot: number; toPlayerId: string }
   | { kind: 'card-reserved-blind'; tier: 1 | 2 | 3; toPlayerId: string }
+  | { kind: 'card-purchased-from-reserve'; playerId: string; reservedIndex: number }
   | { kind: 'tokens'; color: TokenColor; amount: number; playerId: string; direction: 'take' | 'spend' };
+
+function sameReservedCard(a: ReservedCardView, b: ReservedCardView): boolean {
+  return a.tier === b.tier && (a.card?.id ?? null) === (b.card?.id ?? null);
+}
+
+/** `next` is `prev` with exactly one entry spliced out — returns the index that was removed. */
+function findRemovedReservedIndex(prev: ReservedCardView[], next: ReservedCardView[]): number {
+  let i = 0;
+  while (i < next.length && sameReservedCard(prev[i], next[i])) i++;
+  return i;
+}
 
 /**
  * Diffs two consecutive GameStateViews to figure out what physically happened
@@ -62,6 +74,15 @@ export function planTransitions(prev: GameStateView, next: GameStateView): Trans
         break;
       }
     }
+  } else if (changedSlots.length === 0 && purchasedGrowth.length === 1) {
+    // No face-up slot changed but a purchase happened — it must have come from the buyer's own reserve.
+    const playerId = purchasedGrowth[0].playerId;
+    const prevP = prev.players.find((p) => p.id === playerId);
+    const nextP = next.players.find((p) => p.id === playerId);
+    if (prevP && nextP && nextP.reservedCards.length === prevP.reservedCards.length - 1) {
+      const reservedIndex = findRemovedReservedIndex(prevP.reservedCards, nextP.reservedCards);
+      events.push({ kind: 'card-purchased-from-reserve', playerId, reservedIndex });
+    }
   }
 
   for (const color of TOKEN_COLORS) {
@@ -91,6 +112,7 @@ interface SlotSnapshot {
 export interface DomSnapshot {
   tierSlot: Map<string, SlotSnapshot>;
   tierBack: Map<number, SlotSnapshot>;
+  reservedCard: Map<string, SlotSnapshot>;
   bank: Map<TokenColor, DOMRect>;
   player: Map<string, DOMRect>;
 }
@@ -101,6 +123,7 @@ export interface DomSnapshot {
 export function captureDomSnapshot(myPlayerId: string | null): DomSnapshot {
   const tierSlot = new Map<string, SlotSnapshot>();
   const tierBack = new Map<number, SlotSnapshot>();
+  const reservedCard = new Map<string, SlotSnapshot>();
   const bank = new Map<TokenColor, DOMRect>();
   const player = new Map<string, DOMRect>();
 
@@ -110,6 +133,18 @@ export function captureDomSnapshot(myPlayerId: string | null): DomSnapshot {
     if (back) tierBack.set(tier, { rect: back.getBoundingClientRect(), html: back.outerHTML });
     row.querySelectorAll(':scope > .card:not(.card-back)').forEach((card, slot) => {
       tierSlot.set(`${tier}-${slot}`, { rect: card.getBoundingClientRect(), html: card.outerHTML });
+    });
+  });
+
+  if (myPlayerId) {
+    document.querySelectorAll('#my-panel-dock .reserved-stack-item').forEach((el, i) => {
+      reservedCard.set(`${myPlayerId}-${i}`, { rect: el.getBoundingClientRect(), html: el.innerHTML });
+    });
+  }
+  document.querySelectorAll('.opponent-tile[data-player-id]').forEach((tile) => {
+    const id = tile.getAttribute('data-player-id')!;
+    tile.querySelectorAll('.player-reserved > *').forEach((el, i) => {
+      reservedCard.set(`${id}-${i}`, { rect: el.getBoundingClientRect(), html: el.outerHTML });
     });
   });
 
@@ -126,7 +161,7 @@ export function captureDomSnapshot(myPlayerId: string | null): DomSnapshot {
     player.set(id, header.getBoundingClientRect());
   });
 
-  return { tierSlot, tierBack, bank, player };
+  return { tierSlot, tierBack, reservedCard, bank, player };
 }
 
 function playerRectFor(playerId: string, myPlayerId: string | null, fallback: DomSnapshot): DOMRect | null {
@@ -184,6 +219,10 @@ export function runTransitions(events: TransitionEvent[], before: DomSnapshot, m
     } else if (ev.kind === 'card-reserved-blind') {
       const src = before.tierBack.get(ev.tier);
       const dest = playerRectFor(ev.toPlayerId, myPlayerId, before);
+      if (src && dest) flyGhost(src.rect, dest, src.html, 'fly-ghost-card');
+    } else if (ev.kind === 'card-purchased-from-reserve') {
+      const src = before.reservedCard.get(`${ev.playerId}-${ev.reservedIndex}`);
+      const dest = playerRectFor(ev.playerId, myPlayerId, before);
       if (src && dest) flyGhost(src.rect, dest, src.html, 'fly-ghost-card');
     } else if (ev.kind === 'tokens') {
       const bankRect = before.bank.get(ev.color);

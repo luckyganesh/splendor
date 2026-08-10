@@ -124,6 +124,62 @@ describe('planTransitions', () => {
     expect(events).toContainEqual({ kind: 'card-purchased', tier: 1, slot: 0, toPlayerId: 'p1' });
   });
 
+  it('detects a card purchased from the buyer\'s own reserve', () => {
+    const cardA = card('c1');
+    const cardB = card('c2');
+    const prev = baseState({
+      players: [
+        player('p1', { reservedCards: [{ card: cardA, hidden: false, tier: 1 }, { card: cardB, hidden: false, tier: 1 }] }),
+        player('p2'),
+      ],
+    });
+    const next = baseState({
+      players: [
+        player('p1', {
+          reservedCards: [{ card: cardB, hidden: false, tier: 1 }],
+          purchasedCards: [cardA],
+        }),
+        player('p2'),
+      ],
+    });
+    expect(planTransitions(prev, next)).toEqual([
+      { kind: 'card-purchased-from-reserve', playerId: 'p1', reservedIndex: 0 },
+    ]);
+  });
+
+  it('finds the correct reserved slot when a middle reservation is purchased', () => {
+    const cardA = card('c1');
+    const cardB = card('c2');
+    const cardC = card('c3');
+    const prev = baseState({
+      players: [
+        player('p1', {
+          reservedCards: [
+            { card: cardA, hidden: false, tier: 1 },
+            { card: cardB, hidden: false, tier: 1 },
+            { card: cardC, hidden: false, tier: 1 },
+          ],
+        }),
+        player('p2'),
+      ],
+    });
+    const next = baseState({
+      players: [
+        player('p1', {
+          reservedCards: [
+            { card: cardA, hidden: false, tier: 1 },
+            { card: cardC, hidden: false, tier: 1 },
+          ],
+          purchasedCards: [cardB],
+        }),
+        player('p2'),
+      ],
+    });
+    expect(planTransitions(prev, next)).toEqual([
+      { kind: 'card-purchased-from-reserve', playerId: 'p1', reservedIndex: 1 },
+    ]);
+  });
+
   it('skips card animation when the diff is ambiguous (multiple slots changed at once)', () => {
     const prev = baseState();
     const next = baseState({
