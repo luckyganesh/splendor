@@ -1,4 +1,5 @@
 import type { Card, Color, GameStateView, TokenColor } from '../../shared/types.js';
+import { cardAssetUrl } from '../cardAssets.js';
 import { COLOR_META } from '../colors.js';
 import { gemIconSvg, gemToken } from '../gems.js';
 import { confirmCancelButtons, type PendingCardAction } from '../pendingCardAction.js';
@@ -34,13 +35,9 @@ function cardHtml(
       </div>`;
 
   return `
-    <div class="card pattern-${card.color}" style="background-color:var(--panel-2); border-left:4px solid ${meta.light}">
-      <div class="card-top">
-        <span class="points">${card.points > 0 ? card.points : ''}</span>
-        <span class="gem-token gem-token-md" title="${meta.label} bonus">${gemIconSvg(card.color)}</span>
-      </div>
-      ${costHtml(card.cost)}
-      ${actionsHtml}
+    <div class="card card-asset pattern-${card.color}" style="border-left:4px solid ${meta.light}">
+      <img class="card-art" src="${cardAssetUrl(card.id)}" alt="${meta.label} development card" />
+      <div class="card-asset-actions">${actionsHtml}</div>
     </div>`;
 }
 

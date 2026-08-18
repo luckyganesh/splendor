@@ -253,6 +253,18 @@ input {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
+.noble-asset {
+  padding: 0;
+  overflow: hidden;
+}
+
+.noble-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .noble-choice {
   color: inherit;
 }
@@ -289,6 +301,17 @@ input {
   justify-content: center;
 }
 
+/* Match the card cost/bonus-badge gem size above, for the same "same
+   3-class specificity beats .gem-token-md .gem-emoji" reason. */
+.noble-req .gem-token.gem-token-md {
+  width: 44px;
+  height: 44px;
+}
+
+.noble-req .gem-token-md .gem-emoji {
+  font-size: 32px;
+}
+
 .tiers {
   display: flex;
   flex-direction: column;
@@ -319,6 +342,42 @@ input {
   gap: 0.4rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   flex-shrink: 0;
+}
+
+.card-asset {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+}
+
+.card-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-asset-actions {
+  position: absolute;
+  right: 0.4rem;
+  bottom: 0.4rem;
+  left: 0.4rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms ease;
+}
+
+.card-asset:hover .card-asset-actions,
+.card-asset:focus-within .card-asset-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.card-asset-actions .card-actions,
+.card-asset-actions .card-actions-confirm {
+  padding: 0.25rem;
+  border-radius: 6px;
+  background: rgba(10, 16, 22, 0.88);
 }
 
 /* A distinct subtle background pattern per gem type, not just a color — each
@@ -366,21 +425,80 @@ input {
 
 .card-back,
 .mini-card.card-back {
+  position: relative;
   align-items: center;
   justify-content: center;
-  background: repeating-linear-gradient(45deg, var(--panel-2), var(--panel-2) 6px, #16202b 6px, #16202b 12px);
+  background:
+    linear-gradient(145deg, rgba(126, 137, 146, 0.16), transparent 38%),
+    linear-gradient(160deg, #263541, #111a22 72%);
+  border: 1px solid #536574;
   gap: 0.2rem;
+  overflow: hidden;
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.card-back::before,
+.mini-card.card-back::before {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(184, 198, 206, 0.24);
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.card-back::after,
+.mini-card.card-back::after {
+  content: '';
+  position: absolute;
+  right: 16px;
+  bottom: 12px;
+  left: 16px;
+  height: 3px;
+  border-radius: 99px;
+  background: var(--accent);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.tier-row[data-tier='1'] .card-back::after {
+  background: #6fa4f0;
+}
+
+.tier-row[data-tier='2'] .card-back::after {
+  background: #5fcf8f;
+}
+
+.tier-row[data-tier='3'] .card-back::after {
+  background: #f0796a;
+}
+
+.card-back[data-action]:hover {
+  border-color: #9fb0c0;
+  box-shadow: 0 0 0 1px rgba(159, 176, 192, 0.35), 0 4px 12px rgba(0, 0, 0, 0.35);
+  transform: translateY(-2px);
 }
 
 .deck-count {
+  position: relative;
+  z-index: 1;
+  min-width: 3.1rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid rgba(184, 198, 206, 0.35);
+  border-radius: 6px;
+  background: rgba(10, 16, 22, 0.5);
   font-weight: 700;
-  font-size: 1.3rem;
-  color: var(--text-dim);
+  font-size: 1.45rem;
+  line-height: 1;
+  text-align: center;
+  color: var(--text);
 }
 
 .deck-label {
+  position: relative;
+  z-index: 1;
   font-size: 0.65rem;
-  color: var(--text-dim);
+  color: #b8c6ce;
   letter-spacing: 0.05em;
 }
 
@@ -400,7 +518,7 @@ input {
 .cost {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
+  gap: 4px;
   align-content: start;
   justify-items: start;
   flex: 1;
@@ -408,18 +526,31 @@ input {
 
 /* Cost tokens are the smallest gem icons in the game (24px base) and read as
    a blur at a glance — bump them up specifically here without affecting the
-   discard modal or rulebook, which also reuse the "sm" token size. */
-.cost .gem-token {
-  width: 34px;
-  height: 34px;
+   discard modal or rulebook, which also reuse the "sm" token size.
+   Selectors use 3 classes so they beat .gem-token-sm .gem-emoji's equal
+   2-class specificity regardless of source order. */
+.cost .gem-token.gem-token-sm {
+  width: 44px;
+  height: 44px;
 }
 
-.cost .gem-emoji {
-  font-size: 24px;
+.cost .gem-token-sm .gem-emoji {
+  font-size: 32px;
+}
+
+/* Match the card's own bonus-gem badge (top right) to the cost token size
+   above, for the same "same 3-class specificity" reason. */
+.card-top .gem-token.gem-token-md {
+  width: 44px;
+  height: 44px;
+}
+
+.card-top .gem-token-md .gem-emoji {
+  font-size: 32px;
 }
 
 .cost .gem-count {
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .card-actions {
@@ -464,6 +595,44 @@ input {
   padding: 0.4rem;
 }
 
+.mini-card-asset {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+}
+
+.mini-card-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mini-card-actions {
+  position: absolute;
+  right: 0.3rem;
+  bottom: 0.3rem;
+  left: 0.3rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms ease;
+}
+
+.mini-card:hover .mini-card-actions,
+.mini-card:focus-within .mini-card-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mini-card-actions button,
+.mini-card-actions .card-actions-confirm {
+  width: 100%;
+  padding: 0.25rem;
+  border-radius: 5px;
+  background: rgba(10, 16, 22, 0.9);
+  font-size: 0.75rem;
+}
+
 /* Reserved cards stack one on top of the next, each peeking out above the one
    below it; hovering brings that card to the front, fully visible. */
 .reserved-stack {
@@ -503,6 +672,12 @@ input {
 
 .gem-emoji {
   line-height: 1;
+  display: block;
+}
+
+.gem-emoji svg {
+  width: 1em;
+  height: 1em;
   display: block;
 }
 
@@ -754,6 +929,19 @@ button.gem-token-button {
   border: 1px solid var(--accent);
   background: linear-gradient(160deg, rgba(79, 163, 255, 0.1), var(--panel) 60%);
   gap: 0.5rem;
+}
+
+.my-panel .info-body .gem-token.gem-token-md {
+  width: 42px;
+  height: 42px;
+}
+
+.my-panel .info-body .gem-token-md .gem-emoji {
+  font-size: 31px;
+}
+
+.my-panel .info-body .gem-token-md .gem-count {
+  font-size: 1rem;
 }
 
 .info-section {

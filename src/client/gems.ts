@@ -1,16 +1,27 @@
 import type { TokenColor } from '../shared/types.js';
 import { COLOR_META } from './colors.js';
 
-const EMOJI: Record<TokenColor, string> = {
-  white: '💎',
-  blue: '🔷',
-  green: '🟢',
-  red: '❤️',
-  black: '⚫',
+const EMOJI: Partial<Record<TokenColor, string>> = {
   gold: '🟡',
 };
 
+const GEM_SHADOW_DEF =
+  '<filter id="gem-shadow"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-opacity=".18"/></filter>';
+
+const GEM_SVG: Partial<Record<TokenColor, string>> = {
+  gold: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="coin-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0a8"/><stop offset=".38" stop-color="#e6b94f"/><stop offset=".72" stop-color="#b87924"/><stop offset="1" stop-color="#70400f"/></linearGradient><linearGradient id="coin-face" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffe880"/><stop offset="1" stop-color="#c4892f"/></linearGradient>${GEM_SHADOW_DEF}</defs><g transform="translate(100 120) rotate(-12)" filter="url(#gem-shadow)"><ellipse rx="70" ry="82" fill="#6f4517" opacity=".7"/><ellipse rx="68" ry="78" fill="url(#coin-gold)" stroke="#8b5a19" stroke-width="5"/><ellipse rx="53" ry="63" fill="url(#coin-face)" stroke="#ffe29a" stroke-width="3"/><ellipse rx="43" ry="53" fill="none" stroke="#a86f22" stroke-width="2" opacity=".75"/><path d="M-18-31Q0-48 18-31L14-20Q0-28-14-20ZM-17-9Q0-18 17-9V4Q0-4-17 4ZM-15 17Q0 9 15 17L17 30Q0 22-17 30Z" fill="#8b591b" opacity=".72"/><path d="M-34-45Q-18-64 2-64" fill="none" stroke="#fff8cf" stroke-width="8" stroke-linecap="round" opacity=".55"/></g></svg>`,
+  blue: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gem-blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#a9e2f2"/><stop offset=".45" stop-color="#438dca"/><stop offset="1" stop-color="#153a68"/></linearGradient>${GEM_SHADOW_DEF}</defs><g transform="translate(100 120)" filter="url(#gem-shadow)"><polygon points="0,-82 62,-48 76,18 38,70 -38,70 -76,18 -62,-48" fill="url(#gem-blue)" stroke="#20588e" stroke-width="5"/><polygon points="0,-82 0,0 -62,-48" fill="#d9f5fa" opacity=".5"/><polygon points="0,0 62,-48 76,18" fill="#2874b5" opacity=".66"/><polygon points="0,0 38,70 -38,70" fill="#143f78" opacity=".72"/><polygon points="0,0 -76,18 -62,-48" fill="#62bce2" opacity=".5"/><polygon points="-8,-62 22,-45 10,-8 -24,-20" fill="#ffffff" opacity=".62"/></g></svg>`,
+  green: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gem-green" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#c1e9b7"/><stop offset=".45" stop-color="#66b878"/><stop offset="1" stop-color="#235638"/></linearGradient>${GEM_SHADOW_DEF}</defs><g transform="translate(100 120)" filter="url(#gem-shadow)"><polygon points="-42,-78 42,-78 72,-45 58,62 0,82 -58,62 -72,-45" fill="url(#gem-green)" stroke="#2e7647" stroke-width="5"/><polygon points="-42,-78 0,-48 0,10 -58,62 -72,-45" fill="#d9f2cd" opacity=".46"/><polygon points="0,-48 42,-78 72,-45 0,10" fill="#49a967" opacity=".62"/><polygon points="0,10 72,-45 58,62 0,82" fill="#247a46" opacity=".72"/><polygon points="0,10 -58,62 0,82" fill="#1f603b" opacity=".65"/><polygon points="-25,-62 10,-68 28,-45 -8,-30" fill="#ffffff" opacity=".58"/></g></svg>`,
+  red: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gem-red" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f0b4b2"/><stop offset=".45" stop-color="#c65c65"/><stop offset="1" stop-color="#59232d"/></linearGradient>${GEM_SHADOW_DEF}</defs><g transform="translate(100 120)" filter="url(#gem-shadow)"><polygon points="0,-82 70,-40 70,42 0,82 -70,42 -70,-40" fill="url(#gem-red)" stroke="#853542" stroke-width="5"/><polygon points="0,-82 0,5 -70,-40" fill="#ffdcD5" opacity=".5"/><polygon points="0,5 70,-40 70,42" fill="#b94552" opacity=".68"/><polygon points="0,5 70,42 0,82" fill="#742936" opacity=".72"/><polygon points="0,5 -70,42 0,82" fill="#933846" opacity=".56"/><polygon points="-15,-61 20,-48 12,-15 -25,-28" fill="#fff8f5" opacity=".62"/></g></svg>`,
+  black: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gem-black" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#909ba7"/><stop offset=".35" stop-color="#394450"/><stop offset="1" stop-color="#0b0e13"/></linearGradient>${GEM_SHADOW_DEF}</defs><g transform="translate(100 120)" filter="url(#gem-shadow)"><polygon points="-48,-78 48,-78 78,-48 78,48 48,78 -48,78 -78,48 -78,-48" fill="url(#gem-black)" stroke="#202b37" stroke-width="5"/><polygon points="-48,-78 0,-48 0,18 -78,-48" fill="#c4d0d8" opacity=".28"/><polygon points="0,-48 48,-78 78,-48 0,18" fill="#738291" opacity=".36"/><polygon points="0,18 78,-48 78,48 48,78 0,18" fill="#080b10" opacity=".68"/><polygon points="0,18 -78,48 -48,78 48,78" fill="#202b37" opacity=".72"/><polygon points="-35,-57 10,-65 30,-42 -15,-27" fill="#f4f7f8" opacity=".42"/></g></svg>`,
+  white: `<svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gem-white" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f7f8f5"/><stop offset=".45" stop-color="#d4dee3"/><stop offset="1" stop-color="#8c9eaa"/></linearGradient>${GEM_SHADOW_DEF}</defs><g transform="translate(100 120)" filter="url(#gem-shadow)"><polygon points="0,-84 72,-42 52,28 0,84 -52,28 -72,-42" fill="url(#gem-white)" stroke="#7d919d" stroke-width="5"/><polygon points="0,-84 0,0 -72,-42" fill="#ffffff" opacity=".62"/><polygon points="0,0 72,-42 52,28" fill="#e0e9eb" opacity=".64"/><polygon points="0,0 52,28 0,84" fill="#b8c8cf" opacity=".66"/><polygon points="0,0 -52,28 0,84" fill="#d8e3e5" opacity=".7"/><polygon points="-20,-62 8,-70 28,-44 -8,-32" fill="#ffffff" opacity=".7"/></g></svg>`,
+};
+
 export function gemIconSvg(color: TokenColor): string {
+  const svg = GEM_SVG[color];
+  if (svg) {
+    return `<span class="gem-emoji" aria-hidden="true" style="filter:saturate(1.35) brightness(1.08)">${svg}</span>`;
+  }
   return `<span class="gem-emoji" aria-hidden="true">${EMOJI[color]}</span>`;
 }
 
