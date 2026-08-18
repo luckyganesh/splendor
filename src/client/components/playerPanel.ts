@@ -1,7 +1,7 @@
 import type { Color, GameStateView, PlayerView, TokenColor } from '../../shared/types.js';
+import { cardAssetUrl } from '../cardAssets.js';
 import { COLOR_META } from '../colors.js';
-import { costHtml } from './board.js';
-import { gemIconSvg, gemToken } from '../gems.js';
+import { gemToken } from '../gems.js';
 import { confirmCancelButtons, type PendingCardAction } from '../pendingCardAction.js';
 
 function tokenBadges(tokens: Record<TokenColor, number>): string {
@@ -30,21 +30,14 @@ function reservedCardHtml(
   if (reserved.hidden || !reserved.card) {
     return `<div class="mini-card ${sizeClass} card-back"><span class="deck-count">T${reserved.tier}</span></div>`;
   }
-  const meta = COLOR_META[reserved.card.color];
   const pendingHere = pending !== null && pending.kind === 'purchase-reserved' && pending.cardId === reserved.card.id;
   const anyPending = pending !== null;
   return `
-    <div class="mini-card ${sizeClass} pattern-${reserved.card.color}" style="background-color:var(--panel-2); border-left:4px solid ${meta.light}">
-      <div class="mini-card-top">
-        <span class="mini-points">${reserved.card.points > 0 ? reserved.card.points : ''}</span>
-        <span class="gem-token gem-token-sm">${gemIconSvg(reserved.card.color)}</span>
-      </div>
-      ${isMe ? costHtml(reserved.card.cost) : ''}
+    <div class="mini-card ${sizeClass} mini-card-asset">
+      <img class="mini-card-art" src="${cardAssetUrl(reserved.card.id)}" alt="${COLOR_META[reserved.card.color].label} reserved development card" />
       ${
         isMe
-          ? pendingHere
-            ? confirmCancelButtons()
-            : `<button data-action="purchase-reserved" data-card-id="${reserved.card.id}" ${canBuy && !anyPending ? '' : 'disabled'}>Buy</button>`
+          ? `<div class="mini-card-actions">${pendingHere ? confirmCancelButtons() : `<button data-action="purchase-reserved" data-card-id="${reserved.card.id}" ${canBuy && !anyPending ? '' : 'disabled'}>Buy</button>`}</div>`
           : ''
       }
     </div>`;
