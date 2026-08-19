@@ -380,10 +380,10 @@ input {
   background: rgba(10, 16, 22, 0.88);
 }
 
-/* A distinct subtle background pattern per gem type, not just a color — each
-   evokes the way that gem is actually cut/finished. Applies to both full
-   cards and reserved-card previews (mini-card). Kept low-opacity so it reads
-   as texture, not noise, and never competes with the card's own content. */
+.card-asset-actions .card-actions {
+  flex-direction: column;
+}
+
 .pattern-white {
   background-image:
     radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.08), transparent 55%),
